@@ -108,9 +108,6 @@ section{margin-bottom:26px}
 .bill-foot{text-align:center;font-size:11px;color:var(--ink-soft);font-style:italic;margin-top:10px}
 /* misc */
 .empty{color:var(--ink-soft);font-style:italic;font-size:14px;padding:6px 2px}
-.banner{position:fixed;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--ink);color:var(--card);border-radius:6px;padding:13px 16px;display:flex;align-items:center;gap:12px;z-index:60;box-shadow:0 6px 20px rgba(34,32,27,.35)}
-.banner p{font-size:14px;flex:1}
-.banner .btn{padding:8px 14px;box-shadow:none;border-color:var(--card)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));background:var(--ink);color:var(--card);padding:10px 18px;border-radius:4px;font-size:14px;z-index:70;max-width:88vw;text-align:center;transition:opacity .3s;opacity:0;pointer-events:none}
 #toast.show{opacity:1}
 details.settings{margin:8px 2px 30px}
@@ -148,11 +145,6 @@ details.settings .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;line-
   </div>
 </div>
 
-<div class="banner" id="installBanner" hidden>
-  <p>Install Split &amp; Settle for offline use at the table.</p>
-  <button class="btn btn-clay" id="installBtn">Install</button>
-  <button class="del-x" id="installDismiss" style="color:var(--card)">×</button>
-</div>
 <div id="toast"></div>
 <input type="file" accept="image/*" id="scanFile" hidden>
 <div id="exportStage" aria-hidden="true"></div>
@@ -548,22 +540,6 @@ async function exportBill(pi,btn){
   }catch(e){toast('Couldn’t render the image — try again.');}
   finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;}
 }
-
-/* ================= install prompt (Android) ================= */
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();deferredPrompt=e;
-  if(!localStorage.getItem('splitSettle.installDismissed'))$('#installBanner').hidden=false;
-});
-$('#installBtn').addEventListener('click',async()=>{
-  $('#installBanner').hidden=true;
-  if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;}
-});
-$('#installDismiss').addEventListener('click',()=>{
-  $('#installBanner').hidden=true;
-  localStorage.setItem('splitSettle.installDismissed','1');
-});
-window.addEventListener('appinstalled',()=>{$('#installBanner').hidden=true;});
 
 /* ================= service worker ================= */
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){

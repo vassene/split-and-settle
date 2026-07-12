@@ -2,7 +2,7 @@
    Cache-first app shell so the app works fully offline.
    The Claude API (receipt scanning) is network-only and never cached. */
 
-const CACHE = 'split-settle-v1';
+const CACHE = 'split-settle-v2';
 const SHELL = [
   './',
   './index.html',
