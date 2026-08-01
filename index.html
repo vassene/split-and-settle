@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Split &amp; Settle</title>
 <meta name="description" content="Split Thai restaurant bills across a night out — service, VAT, one bill per person.">
-<meta name="theme-color" content="#cf541c">
+<meta name="theme-color" content="#7ea5dc">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,10 +15,12 @@
 <meta name="apple-mobile-web-app-title" content="Split">
 <style>
 :root{
-  /* retro receipt palette: Book Pages paper, Terracotta accent, Bark ink, Butter slip, Clear Skies */
-  --paper:#f7f0e5; --card:#fffdf8; --butter:#fae3b0; --sky:#7ea5dc;
-  --clay:#cf541c; --clay-dark:#a84315;
-  --ink:#673c33; --ink-soft:#9b7b6e; --rule:#dcc9a8; --ok:#4e7a52; --warn:#b03636;
+  /* Clear Skies accent on Book Pages receipts, near-black ink.
+     --clay is the accent slot (historic name): sky blue for the big amounts,
+     --clay-dark the deeper blue for small accents where #7ea5dc is too light. */
+  --paper:#ede4d3; --card:#f7f0e5;
+  --clay:#7ea5dc; --clay-dark:#4a79b8;
+  --ink:#24211c; --ink-soft:#6b6357; --rule:#d9cdb6; --ok:#4e7a52; --warn:#b03636;
   --serif:Georgia,'Times New Roman',serif;
   --mono:'Courier New',Courier,monospace;
   --round:ui-rounded,-apple-system,'SF Pro Rounded','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
@@ -26,8 +28,8 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
-  font-family:var(--serif); color:var(--ink); background:var(--paper);
-  background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(207,84,28,.05) 31px,rgba(207,84,28,.05) 32px);
+  font-family:var(--round); color:var(--ink); background:var(--paper);
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(126,165,220,.07) 31px,rgba(126,165,220,.07) 32px);
   padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 48px) env(safe-area-inset-left);
   min-height:100vh;
 }
@@ -35,21 +37,21 @@ body{
 header{padding:26px 2px 6px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 h1{font-size:clamp(26px,7vw,34px);letter-spacing:-.5px;font-weight:700}
 h1 .amp{color:var(--clay);font-style:italic}
-.tagline{font-size:12.5px;color:var(--ink-soft);font-style:italic;margin:2px 2px 16px}
-button{font-family:var(--serif);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tagline{font-size:12.5px;color:var(--ink-soft);margin:2px 2px 16px}
+button{font-family:var(--round);cursor:pointer;-webkit-tap-highlight-color:transparent}
 input,button{font-size:16px}
-input{font-family:var(--serif);color:var(--ink);background:transparent;border:none;border-bottom:2px dashed var(--rule);padding:6px 2px;outline:none;min-width:0}
-input:focus{border-bottom-color:var(--clay)}
-input.num{font-family:var(--mono);text-align:right}
-.num{font-family:var(--mono)}
-.btn{border:1.5px solid var(--ink);background:var(--card);color:var(--ink);padding:10px 16px;border-radius:3px;font-size:15px;box-shadow:2px 2px 0 var(--ink)}
-.btn:active{transform:translate(2px,2px);box-shadow:none}
-.btn-clay{background:var(--clay);border-color:var(--clay-dark);color:#fff;box-shadow:2px 2px 0 var(--clay-dark)}
+input{font-family:var(--round);color:var(--ink);background:transparent;border:none;border-bottom:2px dashed var(--rule);padding:6px 2px;outline:none;min-width:0}
+input:focus{border-bottom-color:var(--clay-dark)}
+input.num{text-align:right}
+.num,input.num{font-family:var(--round);font-variant-numeric:tabular-nums}
+.btn{border:1.5px solid var(--rule);background:var(--card);color:var(--ink);padding:10px 16px;border-radius:12px;font-size:15px;box-shadow:0 2px 5px rgba(36,33,28,.12)}
+.btn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(36,33,28,.12)}
+.btn-clay{background:var(--clay);border-color:var(--clay);color:var(--ink);font-weight:600;box-shadow:0 2px 5px rgba(74,121,184,.3)}
 .btn-ghost{border:none;background:none;box-shadow:none;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;padding:8px 6px;font-size:13.5px}
 .btn-wide{display:block;width:100%;text-align:center;margin:14px 0}
 .btn[disabled]{opacity:.55;pointer-events:none}
 section{margin-bottom:26px}
-.sec-label{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--clay);font-weight:700;margin:0 2px 10px;display:flex;align-items:center;gap:10px}
+.sec-label{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--clay-dark);font-weight:700;margin:0 2px 10px;display:flex;align-items:center;gap:10px}
 .sec-label::after{content:"";flex:1;border-top:2px dashed var(--rule)}
 /* receipt cards with torn bottom edge */
 .receipt{position:relative;background:var(--card);border-radius:6px 6px 0 0;box-shadow:0 2px 10px rgba(34,32,27,.09);padding:16px 16px 18px;margin-bottom:26px}
@@ -62,7 +64,7 @@ section{margin-bottom:26px}
 .del-x:active{color:var(--warn)}
 /* people chips */
 .chips-row{display:flex;flex-wrap:wrap;gap:8px}
-.pchip{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1.5px solid var(--ink);border-radius:20px;padding:7px 12px;font-size:15px;box-shadow:1.5px 1.5px 0 var(--ink)}
+.pchip{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1.5px solid var(--rule);border-radius:20px;padding:7px 12px;font-size:15px;box-shadow:0 2px 5px rgba(36,33,28,.12)}
 .pchip button{border:none;background:none;font-size:15px;color:var(--ink-soft);padding:0 1px}
 .add-person{display:flex;gap:10px;margin-top:12px}
 .add-person input{flex:1}
@@ -73,22 +75,22 @@ section{margin-bottom:26px}
 .item-top input.num{width:92px}
 .item-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
 .chip{border:1.5px solid var(--rule);background:none;border-radius:14px;padding:4px 11px;font-size:13px;color:var(--ink-soft)}
-.chip.on{border-color:var(--pc,var(--clay));background:var(--pc,var(--clay));color:#fff}
-.divbadge{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
-.unassigned{font-size:12px;color:var(--warn);margin-left:auto;font-style:italic}
+.chip.on{border-color:var(--ink);background:var(--ink);color:var(--card)}
+.divbadge{font-family:var(--round);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
+.unassigned{font-size:12px;color:var(--warn);margin-left:auto}
 /* charges */
 .charges{margin-top:14px;border-top:2px dashed var(--rule);padding-top:12px}
 .charge-row{display:flex;align-items:center;gap:8px;padding:6px 0;flex-wrap:wrap}
 .charge-row .lbl{display:flex;align-items:center;gap:7px;font-size:15px;width:86px}
 .charge-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--clay)}
-.mode-toggle{display:inline-flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
-.mode-toggle button{border:none;background:var(--card);padding:5px 11px;font-family:var(--mono);font-size:13px;color:var(--ink-soft)}
+.mode-toggle{display:inline-flex;border:1.5px solid var(--rule);border-radius:9px;overflow:hidden}
+.mode-toggle button{border:none;background:var(--card);padding:5px 11px;font-family:var(--round);font-size:13px;color:var(--ink-soft)}
 .mode-toggle button.on{background:var(--ink);color:var(--card)}
 .charge-val{width:74px}
 .live{font-size:13.5px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
 .charge-off .mode-toggle,.charge-off .charge-val,.charge-off .live{opacity:.35;pointer-events:none}
 /* totals block */
-.totals{margin-top:12px;border-top:2px dashed var(--rule);padding-top:10px;font-family:var(--mono);font-size:14.5px}
+.totals{margin-top:12px;border-top:2px dashed var(--rule);padding-top:10px;font-family:var(--round);font-variant-numeric:tabular-nums;font-size:14px}
 .trow{display:flex;justify-content:space-between;gap:8px;padding:3px 0;color:var(--ink-soft)}
 .trow.grand{color:var(--ink);font-weight:700;font-size:16.5px;border-top:1.5px solid var(--ink);margin-top:6px;padding-top:8px}
 /* summary / person bills — rounded type, ink body, accent only on the amounts to transfer */
@@ -102,25 +104,22 @@ section{margin-bottom:26px}
 .bill-sub{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
 .bill-rest{margin:14px 0}
 .bill-rest-name{font-weight:700;font-size:16px;margin-bottom:6px}
-.bill-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2.5px 0;color:var(--ink);font-variant-numeric:tabular-nums}
+.bill-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2.5px 0;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .bill-line .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bill-line.soft{color:var(--ink-soft)}
-.bill-line.rt{border-top:1px dashed var(--rule);margin-top:5px;padding-top:6px;font-weight:700;font-size:14px}
+.bill-line.rt{border-top:1px dashed var(--rule);margin-top:5px;padding-top:6px;font-weight:700;font-size:14px;color:var(--ink)}
 .bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-size:13.5px;font-weight:600}
-.bill-transfer .amt{color:var(--clay)}
+.bill-transfer .amt{color:var(--clay-dark);font-weight:800}
 .bill-foot{text-align:center;font-size:10.5px;color:var(--ink-soft);margin-top:10px}
 /* night slip header */
 .slip-brand{font-size:13px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase}
 .slip-date{font-size:11px;color:var(--ink-soft);margin-top:3px}
 .bill.night .bill-owes{font-size:34px;margin-top:10px}
 .thanks{text-align:center;font-size:12.5px;font-weight:700;margin-top:12px}
-/* person tags: initials in a circle (coloured in the app, plain ink on the slip) */
-.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none;font-family:var(--round)}
-.ptag.mono{background:transparent;border:1.5px solid var(--ink);color:var(--ink)}
-.pchip .ptag{margin-left:-4px}
+/* person tags: initials in a circle, inked to match the row they sit in */
+.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;background:transparent;border:1.5px solid currentColor;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none;font-family:var(--round)}
 /* night slip — item lines with sharer tags */
-.slip-item{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:2.5px 0;font-variant-numeric:tabular-nums}
-.slip-item.soft{color:var(--ink-soft)}
+.slip-item{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:2.5px 0;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .slip-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .slip-item .tags{display:inline-flex;flex:none;gap:3px}
 .slip-item .pr{margin-left:auto;flex:none}
@@ -133,7 +132,7 @@ section{margin-bottom:26px}
 .settle-src{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--ink-soft);padding:1px 0;font-variant-numeric:tabular-nums}
 .settle-src:last-of-type{margin-bottom:8px}
 /* misc */
-.empty{color:var(--ink-soft);font-style:italic;font-size:14px;padding:6px 2px}
+.empty{color:var(--ink-soft);font-size:14px;padding:6px 2px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));background:var(--ink);color:var(--card);padding:10px 18px;border-radius:4px;font-size:14px;z-index:70;max-width:88vw;text-align:center;transition:opacity .3s;opacity:0;pointer-events:none}
 #toast.show{opacity:1}
 details.settings{margin:8px 2px 30px}
@@ -295,11 +294,10 @@ function fmtB(baht){return '฿'+baht.toLocaleString('en-US');} /* whole-baht tr
 function fmtR(s){return fmtB(Math.round(s/100));} /* satang → whole-baht display on slips */
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-/* person colours: retro-receipt palette by seat order; tags show the first two letters */
-const PCOLORS=['#cf541c','#4a79b8','#4e7a52','#8058a5','#c25b78','#2f8391','#a8790f','#5b67b8','#9d3d76','#673c33'];
-function pcolor(pi){return PCOLORS[pi%PCOLORS.length];}
-function tagHTML(pi,mono){const nm=(state.people[pi]||'').trim(),init=esc(Array.from(nm).slice(0,2).join('').toUpperCase());
-  return mono?'<span class="ptag mono">'+init+'</span>':'<span class="ptag" style="background:'+pcolor(pi)+'">'+init+'</span>';}
+/* Names are entered as two letters, so a person's tag is simply their name. */
+const NAME_LEN=2;
+function cleanName(s){return Array.from(String(s||'').trim()).slice(0,NAME_LEN).join('').toUpperCase();}
+function tagHTML(pi){return '<span class="ptag">'+esc(cleanName(state.people[pi]))+'</span>';}
 
 /* ================= rendering ================= */
 function chargeLabel(c,name){
@@ -315,15 +313,15 @@ function render(){
   h+='<section><div class="sec-label">1 · Who\'s eating</div>';
   h+='<div class="chips-row">';
   if(!P.length)h+='<span class="empty">Add everyone once — they carry through every restaurant tonight.</span>';
-  P.forEach((p,i)=>{h+='<span class="pchip">'+tagHTML(i)+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
-  h+='</div><div class="add-person"><input id="newPersonName" placeholder="Name (e.g. Aum)" autocomplete="off"><button class="btn" data-action="add-person">Add</button></div></section>';
+  P.forEach((p,i)=>{h+='<span class="pchip">'+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
+  h+='</div><div class="add-person"><input id="newPersonName" placeholder="Two letters (e.g. AU)" maxlength="2" autocapitalize="characters" autocomplete="off"><button class="btn" data-action="add-person">Add</button></div></section>';
 
   /* --- restaurants --- */
   h+='<section><div class="sec-label">2 · Restaurants</div>';
   if(!R.length)h+='<p class="empty" style="margin-bottom:12px">No restaurants yet — add one, or scan a receipt.</p>';
   R.forEach(r=>{h+=restaurantHTML(r);});
   h+='<div class="scanline"><button class="btn" data-action="add-restaurant">+ Add restaurant</button>'+
-     '<button class="btn btn-clay" data-action="scan" id="scanBtn">📷 Scan a receipt photo</button></div></section>';
+     '<button class="btn btn-clay" data-action="scan" id="scanBtn">Scan a receipt photo</button></div></section>';
 
   /* --- summary --- */
   h+='<section><div class="sec-label">3 · Who owes what</div><div id="summary"></div></section>';
@@ -348,7 +346,7 @@ function restaurantHTML(r){
     h+='<div class="item-chips">';
     P.forEach((p,pi)=>{
       const on=it.sharers.includes(pi);
-      h+='<button class="chip'+(on?' on':'')+'" style="--pc:'+pcolor(pi)+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
+      h+='<button class="chip'+(on?' on':'')+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
     });
     h+='<span class="divbadge" data-badge="'+it.id+'"></span></div></div>';
   });
@@ -450,7 +448,7 @@ function nightSlipHTML(){
       if(!sharers.length)h+='<div class="slip-item soft"><span class="nm">'+esc(it.name||'Item')+' (not counted)</span><span class="pr">'+price+'</span></div>';
       else{
         /* everyone shared it → no tags, just the price; a subset → their initials */
-        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(pi=>tagHTML(pi,true)).join('')+'</span>';
+        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(tagHTML).join('')+'</span>';
         h+='<div class="slip-item"><span class="nm">'+esc(it.name||'Item')+'</span>'+tags+'<span class="pr">'+price+'</span></div>';
       }
     });
@@ -502,9 +500,9 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-action]');if(!b)return;
   const a=b.dataset.action,rid=b.dataset.rid,iid=b.dataset.iid;
   if(a==='add-person'){
-    const inp=$('#newPersonName'),name=inp.value.trim();
+    const inp=$('#newPersonName'),name=cleanName(inp.value);
     if(!name)return;
-    if(state.people.includes(name)){toast('That name is already in the list.');return;}
+    if(state.people.includes(name)){toast('Those initials are already in the list.');return;}
     state.people.push(name);
     state.restaurants.forEach(r=>r.items.forEach(it=>{/* new person not auto-added to old items */}));
     save();render();$('#newPersonName').focus();
@@ -607,7 +605,7 @@ $('#scanFile').addEventListener('change',async e=>{
   }catch(err){
     toast('Couldn’t read that receipt — try a clearer photo, or add items manually.');
   }finally{
-    const btn2=$('#scanBtn');if(btn2){btn2.disabled=false;btn2.textContent='📷 Scan a receipt photo';}
+    const btn2=$('#scanBtn');if(btn2){btn2.disabled=false;btn2.textContent='Scan a receipt photo';}
   }
 });
 function downscale(file){
@@ -638,7 +636,7 @@ async function exportBill(pi,btn){
   btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
   try{
     await new Promise(r=>setTimeout(r,50));
-    const canvas=await html2canvas(stage.firstChild,{scale:3,backgroundColor:'#fffdf8',logging:false});
+    const canvas=await html2canvas(stage.firstChild,{scale:3,backgroundColor:'#f7f0e5',logging:false});
     const name=state.people[pi].replace(/[^\w฀-๿-]+/g,'') || 'friend';
     const a=document.createElement('a');
     a.download='bill-'+name+'.png';
@@ -662,7 +660,7 @@ async function exportNight(btn){
     const w=el.offsetWidth||400,hgt=el.offsetHeight||1;
     let scale=Math.min(3,Math.sqrt(16000000/(w*hgt)),4096/w);
     scale=Math.max(1.5,scale);
-    const canvas=await html2canvas(el,{scale,backgroundColor:'#fffdf8',logging:false});
+    const canvas=await html2canvas(el,{scale,backgroundColor:'#f7f0e5',logging:false});
     const d=new Date();
     const fname='split-and-settle-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.png';
     const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
