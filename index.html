@@ -21,6 +21,7 @@
   --ink:#673c33; --ink-soft:#9b7b6e; --rule:#dcc9a8; --ok:#4e7a52; --warn:#b03636;
   --serif:Georgia,'Times New Roman',serif;
   --mono:'Courier New',Courier,monospace;
+  --round:ui-rounded,-apple-system,'SF Pro Rounded','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -90,52 +91,47 @@ section{margin-bottom:26px}
 .totals{margin-top:12px;border-top:2px dashed var(--rule);padding-top:10px;font-family:var(--mono);font-size:14.5px}
 .trow{display:flex;justify-content:space-between;gap:8px;padding:3px 0;color:var(--ink-soft)}
 .trow.grand{color:var(--ink);font-weight:700;font-size:16.5px;border-top:1.5px solid var(--ink);margin-top:6px;padding-top:8px}
-/* summary / person bills */
-.bill{position:relative;background:var(--card);border-radius:6px 6px 0 0;box-shadow:0 2px 10px rgba(34,32,27,.09);padding:20px 18px 22px;margin-bottom:26px}
+/* summary / person bills — rounded type, ink body, accent only on the amounts to transfer */
+.bill{position:relative;background:var(--card);border-radius:6px 6px 0 0;box-shadow:0 2px 10px rgba(34,32,27,.09);padding:20px 18px 22px;margin-bottom:26px;font-family:var(--round)}
 .bill::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px;
   background:conic-gradient(from -45deg at 50% 0,var(--card) 90deg,transparent 0) 50% 0/16px 10px repeat-x;
   filter:drop-shadow(0 3px 3px rgba(34,32,27,.07))}
 .bill-head{text-align:center;border-bottom:2px dashed var(--rule);padding-bottom:12px;margin-bottom:12px}
 .bill-name{font-size:20px;font-weight:700}
-.bill-owes{font-family:var(--mono);font-size:30px;font-weight:700;color:var(--clay);margin-top:4px;letter-spacing:-.5px}
-.bill-sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
-.bill-rest{margin:12px 0}
-.bill-rest-name{font-weight:700;font-size:15px;margin-bottom:5px}
-.bill-line{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:13.5px;padding:2px 0;color:var(--ink)}
+.bill-owes{font-size:32px;font-weight:800;color:var(--clay);margin-top:6px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.bill-sub{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
+.bill-rest{margin:14px 0}
+.bill-rest-name{font-weight:700;font-size:16px;margin-bottom:6px}
+.bill-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2.5px 0;color:var(--ink);font-variant-numeric:tabular-nums}
 .bill-line .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bill-line.soft{color:var(--ink-soft)}
-.bill-line.rt{border-top:1px dashed var(--rule);margin-top:4px;padding-top:5px;font-weight:700}
-.bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-family:var(--mono);font-size:15px;font-weight:700}
+.bill-line.rt{border-top:1px dashed var(--rule);margin-top:5px;padding-top:6px;font-weight:700;font-size:14px}
+.bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-size:13.5px;font-weight:600}
 .bill-transfer .amt{color:var(--clay)}
-.bill-foot{text-align:center;font-size:11px;color:var(--ink-soft);font-style:italic;margin-top:10px}
-/* night slip: coloured receipt paper, dot-matrix-style header, barcode footer */
-.bill.night{background:var(--butter)}
-.bill.night::after{background:conic-gradient(from -45deg at 50% 0,var(--butter) 90deg,transparent 0) 50% 0/16px 10px repeat-x}
-.bill.night .bill-name{font-family:var(--mono);letter-spacing:3px;text-transform:uppercase;font-size:22px}
-.bill.night .slip-item .tags .ptag{box-shadow:0 0 0 1.5px var(--butter)}
-.thanks{text-align:center;font-family:var(--mono);font-weight:700;font-size:15px;margin-top:14px}
-.thanks .sub{font-weight:400;font-size:11px;margin-top:2px}
-.barcode{display:flex;justify-content:center;align-items:stretch;gap:2px;height:32px;margin:10px auto 2px}
-.barcode i{display:block;background:var(--ink)}
-/* person colour tags (initials in a circle) */
-.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none}
+.bill-foot{text-align:center;font-size:10.5px;color:var(--ink-soft);margin-top:10px}
+/* night slip header */
+.slip-brand{font-size:13px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase}
+.slip-date{font-size:11px;color:var(--ink-soft);margin-top:3px}
+.bill.night .bill-owes{font-size:34px;margin-top:10px}
+.thanks{text-align:center;font-size:12.5px;font-weight:700;margin-top:12px}
+/* person tags: initials in a circle (coloured in the app, plain ink on the slip) */
+.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none;font-family:var(--round)}
+.ptag.mono{background:transparent;border:1.5px solid var(--ink);color:var(--ink)}
 .pchip .ptag{margin-left:-4px}
-/* combined night slip — item lines with sharer tags */
-.slip-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:13.5px;padding:2px 0}
+/* night slip — item lines with sharer tags */
+.slip-item{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:2.5px 0;font-variant-numeric:tabular-nums}
 .slip-item.soft{color:var(--ink-soft)}
 .slip-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.slip-item .tags{display:inline-flex;flex:none}
-.slip-item .tags .ptag{margin-left:-5px;box-shadow:0 0 0 1.5px var(--card)}
-.slip-item .tags .ptag:first-child{margin-left:0}
+.slip-item .tags{display:inline-flex;flex:none;gap:3px}
 .slip-item .pr{margin-left:auto;flex:none}
-/* combined night slip — settle-up block */
-.settle{border-top:2px dashed var(--rule);margin-top:14px;padding-top:10px}
-.settle-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);text-align:center;margin-bottom:6px}
-.settle-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:3px 0}
-.settle-who{font-size:15px;font-weight:700;line-height:1.7;min-width:0}
-.settle-amt{font-size:19px;font-weight:700;color:var(--clay);flex:none;white-space:nowrap}
+/* night slip — settle-up block */
+.settle{border-top:2px dashed var(--rule);margin-top:16px;padding-top:12px}
+.settle-title{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);text-align:center;margin-bottom:8px}
+.settle-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:4px 0}
+.settle-who{font-size:16px;font-weight:700;line-height:1.5;min-width:0;color:var(--ink)}
+.settle-amt{font-size:21px;font-weight:800;color:var(--clay);flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
 .settle-amt .each{font-size:11px;color:var(--ink-soft);font-weight:400}
-.settle-src{font-size:11.5px;color:var(--ink-soft);margin:-2px 0 6px;line-height:1.45}
+.settle-src{font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;line-height:1.45;font-variant-numeric:tabular-nums}
 /* misc */
 .empty{color:var(--ink-soft);font-style:italic;font-size:14px;padding:6px 2px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));background:var(--ink);color:var(--card);padding:10px 18px;border-radius:4px;font-size:14px;z-index:70;max-width:88vw;text-align:center;transition:opacity .3s;opacity:0;pointer-events:none}
@@ -301,7 +297,8 @@ function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;',
 /* person colours: retro-receipt palette by seat order; tags show the first two letters */
 const PCOLORS=['#cf541c','#4a79b8','#4e7a52','#8058a5','#c25b78','#2f8391','#a8790f','#5b67b8','#9d3d76','#673c33'];
 function pcolor(pi){return PCOLORS[pi%PCOLORS.length];}
-function tagHTML(pi){const nm=(state.people[pi]||'').trim();return '<span class="ptag" style="background:'+pcolor(pi)+'">'+esc(Array.from(nm).slice(0,2).join('').toUpperCase())+'</span>';}
+function tagHTML(pi,mono){const nm=(state.people[pi]||'').trim(),init=esc(Array.from(nm).slice(0,2).join('').toUpperCase());
+  return mono?'<span class="ptag mono">'+init+'</span>':'<span class="ptag" style="background:'+pcolor(pi)+'">'+init+'</span>';}
 
 /* ================= rendering ================= */
 function chargeLabel(c,name){
@@ -439,20 +436,20 @@ function nightSlipHTML(){
   const night=computeNight(R,P.length);
   const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
   let h='<div class="bill night" data-night-slip="1">'+
-    '<div class="bill-head"><div class="bill-name">Split &amp; Settle</div>'+
-    '<div class="bill-sub">'+esc(date)+'</div>'+
+    '<div class="bill-head"><div class="slip-brand">Split &amp; Settle</div>'+
+    '<div class="slip-date">'+esc(date)+'</div>'+
     '<div class="bill-owes">'+fmt(night.grandTotal)+'</div>'+
-    '<div class="bill-sub">grand total tonight</div></div>';
+    '<div class="bill-sub">grand total</div></div>';
   R.forEach((r,ri)=>{
     const c=night.perRest[ri];
     h+='<div class="bill-rest"><div class="bill-rest-name">'+esc(r.name||'Restaurant')+'</div>';
     r.items.forEach(it=>{
       const sharers=(it.sharers||[]).filter(pi=>pi>=0&&pi<P.length).sort((a,b)=>a-b);
       const price=fmt(toSatang(it.price));
-      if(!sharers.length)h+='<div class="slip-item soft"><span class="nm">'+esc(it.name||'Item')+' <em>— not counted</em></span><span class="pr">'+price+'</span></div>';
+      if(!sharers.length)h+='<div class="slip-item soft"><span class="nm">'+esc(it.name||'Item')+' (not counted)</span><span class="pr">'+price+'</span></div>';
       else{
-        /* everyone shared it → no tags, just the price; a subset → their colour tags */
-        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(tagHTML).join('')+'</span>';
+        /* everyone shared it → no tags, just the price; a subset → their initials */
+        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(pi=>tagHTML(pi,true)).join('')+'</span>';
         h+='<div class="slip-item"><span class="nm">'+esc(it.name||'Item')+'</span>'+tags+'<span class="pr">'+price+'</span></div>';
       }
     });
@@ -463,17 +460,16 @@ function nightSlipHTML(){
   });
   h+='<div class="settle"><div class="settle-title">Settle up</div>';
   night.groups.forEach(g=>{
-    const who=g.members.map(pi=>'<span style="color:'+pcolor(pi)+'">'+esc(P[pi])+'</span>').join(', ');
+    const who=g.members.map(pi=>esc(P[pi])).join(', ');
     h+='<div class="settle-row"><span class="settle-who">'+who+'</span>'+
-       '<span class="settle-amt num">'+fmtB(g.rTotal)+(g.members.length>1?' <span class="each">each</span>':'')+'</span></div>';
+       '<span class="settle-amt">'+fmtB(g.rTotal)+(g.members.length>1?' <span class="each">each</span>':'')+'</span></div>';
     const parts=[];
     R.forEach((r,ri)=>{if(g.rByRest[ri]>0)parts.push(esc(r.name||'Restaurant')+' '+fmtB(g.rByRest[ri]));});
-    if(parts.length)h+='<div class="settle-src num">'+parts.join(' · ')+'</div>';
+    if(parts.length)h+='<div class="settle-src">'+parts.join(' · ')+'</div>';
   });
   h+='</div><div class="bill-transfer">Please transfer the amount next to your name.</div>'+
      '<div class="bill-foot">Rounded to the nearest baht · Split &amp; Settle · '+esc(date)+'</div>'+
-     '<div class="thanks">Thank you !<div class="sub">See you next time :)</div></div>'+
-     '<div class="barcode">'+'213121132211312112321131221312113211'.split('').map(wd=>'<i style="width:'+wd+'px"></i>').join('')+'</div></div>';
+     '<div class="thanks">Thank you !</div></div>';
   return h;
 }
 
@@ -641,7 +637,7 @@ async function exportBill(pi,btn){
   btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
   try{
     await new Promise(r=>setTimeout(r,50));
-    const canvas=await html2canvas(stage.firstChild,{scale:3,backgroundColor:'#fffdf7',logging:false});
+    const canvas=await html2canvas(stage.firstChild,{scale:3,backgroundColor:'#fffdf8',logging:false});
     const name=state.people[pi].replace(/[^\w฀-๿-]+/g,'') || 'friend';
     const a=document.createElement('a');
     a.download='bill-'+name+'.png';
@@ -656,7 +652,7 @@ async function exportBill(pi,btn){
 async function exportNight(btn){
   if(typeof html2canvas!=='function'){toast('Image export unavailable.');return;}
   const stage=$('#exportStage');
-  stage.innerHTML='<div style="background:var(--butter);padding:8px 0 14px">'+nightSlipHTML()+'</div>';
+  stage.innerHTML='<div style="background:var(--card);padding:8px 0 14px">'+nightSlipHTML()+'</div>';
   btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
   try{
     await new Promise(r=>setTimeout(r,50));
@@ -665,7 +661,7 @@ async function exportNight(btn){
     const w=el.offsetWidth||400,hgt=el.offsetHeight||1;
     let scale=Math.min(3,Math.sqrt(16000000/(w*hgt)),4096/w);
     scale=Math.max(1.5,scale);
-    const canvas=await html2canvas(el,{scale,backgroundColor:'#fae3b0',logging:false});
+    const canvas=await html2canvas(el,{scale,backgroundColor:'#fffdf8',logging:false});
     const d=new Date();
     const fname='split-and-settle-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.png';
     const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
