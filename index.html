@@ -34,9 +34,10 @@ body{
   min-height:100vh;
 }
 .wrap{max-width:560px;margin:0 auto;padding:0 14px}
-header{padding:26px 2px 6px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+header{padding:26px 2px 6px;display:flex;align-items:center;gap:11px}
 h1{font-size:clamp(26px,7vw,34px);letter-spacing:-.5px;font-weight:700}
-h1 .amp{color:var(--clay);font-style:italic}
+h1 .amp{color:var(--clay-dark)}
+.logo{width:38px;height:38px;border-radius:11px;flex:none;display:block;object-fit:cover}
 .tagline{font-size:12.5px;color:var(--ink-soft);margin:2px 2px 16px}
 button{font-family:var(--round);cursor:pointer;-webkit-tap-highlight-color:transparent}
 input,button{font-size:16px}
@@ -150,6 +151,7 @@ details.settings .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;line-
 <body>
 <div class="wrap">
   <header>
+    <img class="logo" src="icons/icon-192.png" alt="" aria-hidden="true" width="38" height="38">
     <h1>Split <span class="amp">&amp;</span> Settle</h1>
   </header>
   <p class="tagline">one night, many restaurants, one bill each — in ฿</p>
@@ -160,7 +162,7 @@ details.settings .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;line-
     <summary>Settings — Claude API key (for receipt scanning)</summary>
     <div class="inner">
       <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off">
-      <p class="hint">Needed only for 📷 receipt scanning. Stored on this device (localStorage), sent only to api.anthropic.com. Everything else works offline without it.</p>
+      <p class="hint">Needed only for receipt scanning. Stored on this device (localStorage), sent only to api.anthropic.com. Everything else works offline without it.</p>
     </div>
   </details>
 
@@ -629,8 +631,12 @@ function downscale(file){
 }
 
 /* ================= export person bill as PNG ================= */
+/* Both exports share #exportStage, so only one may run at a time. */
+let exporting=false;
 async function exportBill(pi,btn){
   if(typeof html2canvas!=='function'){toast('Image export unavailable.');return;}
+  if(exporting){toast('Still saving the last image…');return;}
+  exporting=true;
   const stage=$('#exportStage');
   stage.innerHTML='<div style="background:var(--card);padding:8px 0 14px">'+personBillHTML(pi,true)+'</div>';
   btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
@@ -644,12 +650,14 @@ async function exportBill(pi,btn){
     document.body.appendChild(a);a.click();a.remove();
     toast('Saved bill-'+name+'.png');
   }catch(e){toast('Couldn’t render the image — try again.');}
-  finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;}
+  finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;exporting=false;}
 }
 
 /* ================= export combined night summary as PNG ================= */
 async function exportNight(btn){
   if(typeof html2canvas!=='function'){toast('Image export unavailable.');return;}
+  if(exporting){toast('Still saving the last image…');return;}
+  exporting=true;
   const stage=$('#exportStage');
   stage.innerHTML='<div style="background:var(--card);padding:8px 0 14px">'+nightSlipHTML()+'</div>';
   btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
@@ -679,7 +687,7 @@ async function exportNight(btn){
       toast('Saved '+fname);
     }
   }catch(e){toast('Couldn’t render the image — try again.');}
-  finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;}
+  finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;exporting=false;}
 }
 
 /* ================= service worker ================= */
