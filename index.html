@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Split &amp; Settle</title>
 <meta name="description" content="Split Thai restaurant bills across a night out — service, VAT, one bill per person.">
-<meta name="theme-color" content="#b6552e">
+<meta name="theme-color" content="#cf541c">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,8 +15,10 @@
 <meta name="apple-mobile-web-app-title" content="Split">
 <style>
 :root{
-  --paper:#f7f3e9; --card:#fffdf7; --clay:#b6552e; --clay-dark:#94431f;
-  --ink:#22201b; --ink-soft:#6b665c; --rule:#d8d0bd; --ok:#3e7a4e; --warn:#b03636;
+  /* retro receipt palette: Book Pages paper, Terracotta accent, Bark ink, Butter slip, Clear Skies */
+  --paper:#f7f0e5; --card:#fffdf8; --butter:#fae3b0; --sky:#7ea5dc;
+  --clay:#cf541c; --clay-dark:#a84315;
+  --ink:#673c33; --ink-soft:#9b7b6e; --rule:#dcc9a8; --ok:#4e7a52; --warn:#b03636;
   --serif:Georgia,'Times New Roman',serif;
   --mono:'Courier New',Courier,monospace;
 }
@@ -24,7 +26,7 @@
 html{-webkit-text-size-adjust:100%}
 body{
   font-family:var(--serif); color:var(--ink); background:var(--paper);
-  background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(182,85,46,.045) 31px,rgba(182,85,46,.045) 32px);
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(207,84,28,.05) 31px,rgba(207,84,28,.05) 32px);
   padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 48px) env(safe-area-inset-left);
   min-height:100vh;
 }
@@ -106,6 +108,15 @@ section{margin-bottom:26px}
 .bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-family:var(--mono);font-size:15px;font-weight:700}
 .bill-transfer .amt{color:var(--clay)}
 .bill-foot{text-align:center;font-size:11px;color:var(--ink-soft);font-style:italic;margin-top:10px}
+/* night slip: coloured receipt paper, dot-matrix-style header, barcode footer */
+.bill.night{background:var(--butter)}
+.bill.night::after{background:conic-gradient(from -45deg at 50% 0,var(--butter) 90deg,transparent 0) 50% 0/16px 10px repeat-x}
+.bill.night .bill-name{font-family:var(--mono);letter-spacing:3px;text-transform:uppercase;font-size:22px}
+.bill.night .slip-item .tags .ptag{box-shadow:0 0 0 1.5px var(--butter)}
+.thanks{text-align:center;font-family:var(--mono);font-weight:700;font-size:15px;margin-top:14px}
+.thanks .sub{font-weight:400;font-size:11px;margin-top:2px}
+.barcode{display:flex;justify-content:center;align-items:stretch;gap:2px;height:32px;margin:10px auto 2px}
+.barcode i{display:block;background:var(--ink)}
 /* person colour tags (initials in a circle) */
 .ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none}
 .pchip .ptag{margin-left:-4px}
@@ -264,28 +275,31 @@ function computeNight(restaurants,nPeople){
   const grandTotal=perRest.reduce((a,c)=>a+c.total,0);
   const people=Array.from({length:nPeople},(_,pi)=>{
     const byRest=perRest.map(c=>c.perPerson[pi]?c.perPerson[pi].total:0);
-    return{total:byRest.reduce((a,b)=>a+b,0),byRest};
+    const total=byRest.reduce((a,b)=>a+b,0);
+    /* Transfer amounts round to the nearest whole baht (halves up) — rTotal and
+       rByRest are in baht, not satang. Restaurant sections stay exact-satang. */
+    return{total,byRest,rTotal:Math.round(total/100),rByRest:byRest.map(b=>Math.round(b/100))};
   });
-  /* Settle-up groups: people with byte-identical bills (same share at every
-     restaurant) collapse into one line. Grouping is by the full breakdown, not
-     just the total, so an amount is only ever shown once per person owing it —
-     bills a satang apart stay separate because the transfer amounts differ. */
+  /* Settle-up groups: people whose ROUNDED bills match at every restaurant (and
+     in total) share one line — rounding is what lets near-identical bills,
+     a satang or two apart, collapse into "฿504 each". */
   const groups=[];const gIdx=new Map();
   people.forEach((p,pi)=>{
-    const key=p.byRest.join(',');
+    const key=p.rTotal+'|'+p.rByRest.join(',');
     if(gIdx.has(key))groups[gIdx.get(key)].members.push(pi);
-    else{gIdx.set(key,groups.length);groups.push({total:p.total,byRest:p.byRest,members:[pi]});}
+    else{gIdx.set(key,groups.length);groups.push({rTotal:p.rTotal,rByRest:p.rByRest,members:[pi]});}
   });
-  groups.sort((a,b)=>b.total-a.total);
+  groups.sort((a,b)=>b.rTotal-a.rTotal);
   return{perRest,people,groups,grandTotal};
 }
 /* ===NIGHT-END=== */
 
 function fmt(s){return '฿'+(s/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtB(baht){return '฿'+baht.toLocaleString('en-US');} /* whole-baht transfer amounts */
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-/* person colours: fixed palette by seat order; tags show the first two letters */
-const PCOLORS=['#b6552e','#2f6bad','#3e7a4e','#8e4fa8','#c2374d','#17858c','#a8790f','#5b67b8','#9d3d76','#6d4c41'];
+/* person colours: retro-receipt palette by seat order; tags show the first two letters */
+const PCOLORS=['#cf541c','#4a79b8','#4e7a52','#8058a5','#c25b78','#2f8391','#a8790f','#5b67b8','#9d3d76','#673c33'];
 function pcolor(pi){return PCOLORS[pi%PCOLORS.length];}
 function tagHTML(pi){const nm=(state.people[pi]||'').trim();return '<span class="ptag" style="background:'+pcolor(pi)+'">'+esc(Array.from(nm).slice(0,2).join('').toUpperCase())+'</span>';}
 
@@ -409,11 +423,11 @@ function personBillHTML(pi,standalone){
   });
   let h='<div class="bill" data-bill="'+pi+'">'+
     '<div class="bill-head"><div class="bill-name">'+esc(P[pi])+'</div>'+
-    '<div class="bill-owes">'+fmt(grand)+'</div>'+
+    '<div class="bill-owes">'+fmtB(Math.round(grand/100))+'</div>'+
     '<div class="bill-sub">total for tonight</div></div>';
   h+=blocks.join('')||'<p class="empty">Nothing assigned yet.</p>';
-  h+='<div class="bill-transfer">Please transfer <span class="amt">'+fmt(grand)+'</span></div>';
-  h+='<div class="bill-foot">Split &amp; Settle · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>';
+  h+='<div class="bill-transfer">Please transfer <span class="amt">'+fmtB(Math.round(grand/100))+'</span></div>';
+  h+='<div class="bill-foot">Rounded to the nearest baht · Split &amp; Settle · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>';
   h+='</div>';
   if(!standalone)h+='<button class="btn-ghost btn-wide" data-action="export" data-pi="'+pi+'" style="margin-top:-10px">Save '+esc(P[pi])+'’s bill as image</button>';
   return h;
@@ -424,7 +438,7 @@ function nightSlipHTML(){
   const P=state.people,R=state.restaurants;
   const night=computeNight(R,P.length);
   const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-  let h='<div class="bill" data-night-slip="1">'+
+  let h='<div class="bill night" data-night-slip="1">'+
     '<div class="bill-head"><div class="bill-name">Split &amp; Settle</div>'+
     '<div class="bill-sub">'+esc(date)+'</div>'+
     '<div class="bill-owes">'+fmt(night.grandTotal)+'</div>'+
@@ -449,15 +463,17 @@ function nightSlipHTML(){
   });
   h+='<div class="settle"><div class="settle-title">Settle up</div>';
   night.groups.forEach(g=>{
-    const who=g.members.map(pi=>tagHTML(pi)+' '+esc(P[pi])).join(', ');
+    const who=g.members.map(pi=>'<span style="color:'+pcolor(pi)+'">'+esc(P[pi])+'</span>').join(', ');
     h+='<div class="settle-row"><span class="settle-who">'+who+'</span>'+
-       '<span class="settle-amt num">'+fmt(g.total)+(g.members.length>1?' <span class="each">each</span>':'')+'</span></div>';
+       '<span class="settle-amt num">'+fmtB(g.rTotal)+(g.members.length>1?' <span class="each">each</span>':'')+'</span></div>';
     const parts=[];
-    R.forEach((r,ri)=>{if(g.byRest[ri]>0)parts.push(esc(r.name||'Restaurant')+' '+fmt(g.byRest[ri]));});
+    R.forEach((r,ri)=>{if(g.rByRest[ri]>0)parts.push(esc(r.name||'Restaurant')+' '+fmtB(g.rByRest[ri]));});
     if(parts.length)h+='<div class="settle-src num">'+parts.join(' · ')+'</div>';
   });
   h+='</div><div class="bill-transfer">Please transfer the amount next to your name.</div>'+
-     '<div class="bill-foot">Split &amp; Settle · '+esc(date)+'</div></div>';
+     '<div class="bill-foot">Rounded to the nearest baht · Split &amp; Settle · '+esc(date)+'</div>'+
+     '<div class="thanks">Thank you !<div class="sub">See you next time :)</div></div>'+
+     '<div class="barcode">'+'213121132211312112321131221312113211'.split('').map(wd=>'<i style="width:'+wd+'px"></i>').join('')+'</div></div>';
   return h;
 }
 
@@ -640,7 +656,7 @@ async function exportBill(pi,btn){
 async function exportNight(btn){
   if(typeof html2canvas!=='function'){toast('Image export unavailable.');return;}
   const stage=$('#exportStage');
-  stage.innerHTML='<div style="background:var(--card);padding:8px 0 14px">'+nightSlipHTML()+'</div>';
+  stage.innerHTML='<div style="background:var(--butter);padding:8px 0 14px">'+nightSlipHTML()+'</div>';
   btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
   try{
     await new Promise(r=>setTimeout(r,50));
@@ -649,7 +665,7 @@ async function exportNight(btn){
     const w=el.offsetWidth||400,hgt=el.offsetHeight||1;
     let scale=Math.min(3,Math.sqrt(16000000/(w*hgt)),4096/w);
     scale=Math.max(1.5,scale);
-    const canvas=await html2canvas(el,{scale,backgroundColor:'#fffdf7',logging:false});
+    const canvas=await html2canvas(el,{scale,backgroundColor:'#fae3b0',logging:false});
     const d=new Date();
     const fname='split-and-settle-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.png';
     const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));

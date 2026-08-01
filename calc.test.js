@@ -179,10 +179,12 @@ function check(name, cond, detail) {
     const restSum = night.perRest.reduce((a, c) => a + c.total, 0);
     if (settleSum !== restSum || night.grandTotal !== restSum)
       bad = `trial ${trial} (${amtMode ? '฿' : '%'} mode): settle ${settleSum} vs restaurants ${restSum}`;
-    const groupSum = night.groups.reduce((a, g) => a + g.total * g.members.length, 0);
     const groupCnt = night.groups.reduce((a, g) => a + g.members.length, 0);
-    if (groupSum !== restSum || groupCnt !== nPeople)
-      bad = `trial ${trial}: groups sum ${groupSum} vs ${restSum}, cover ${groupCnt}/${nPeople}`;
+    if (groupCnt !== nPeople)
+      bad = `trial ${trial}: groups cover ${groupCnt}/${nPeople}`;
+    // Every rounded transfer amount within half a baht of the exact figure.
+    if (night.people.some(p => Math.abs(p.rTotal * 100 - p.total) > 50))
+      bad = `trial ${trial}: rounding drifted more than 50 satang`;
   }
   check('500 randomized nights: settle block = sum of restaurant totals, % and ฿ modes', bad === '', bad);
 }
@@ -208,18 +210,18 @@ function check(name, cond, detail) {
     c.perPerson.reduce((a, p) => a + p.total, 0) === c.total);
 }
 
-/* ---- 9. Settle-up grouping: identical bills group; satang-different bills must not ---- */
+/* ---- 9. Settle-up grouping on rounded whole-baht amounts ---- */
 {
-  // Two people share everything evenly with even satang → identical bills → one group.
+  // Two people share everything evenly → identical rounded bills → one group.
   const nEq = computeNight([{
     items: [{ name: 'Set', price: '500', sharers: [0, 1] }],
     service: { on: true, mode: 'pct', value: 10 },
     vat: { on: true, mode: 'pct', value: 7 }
   }], 2);
   check('identical bills collapse into one group', nEq.groups.length === 1 && nEq.groups[0].members.length === 2, JSON.stringify(nEq.groups));
-  check('grouped amount × members = restaurant total', nEq.groups[0].total * 2 === nEq.perRest[0].total);
-  // Worked example: Aum and Bee differ by 2 satang (largest-remainder ties) → separate lines,
-  // because the printed amount is the exact transfer amount.
+  check('rounded amount is nearest baht (294.25 → 294)', nEq.groups[0].rTotal === 294, nEq.groups[0].rTotal);
+  // Worked example: Aum 504.34 and Bee 504.32 differ by 2 satang, but both round
+  // to ฿504 with matching rounded breakdowns → ONE settle line. Cee stays alone.
   const rests = [
     { items: [
         { name: 'Larb', price: '180', sharers: [0, 1] },
@@ -232,12 +234,18 @@ function check(name, cond, detail) {
       vat: { on: true, mode: 'amt', value: 68.95 } }
   ];
   const n = computeNight(rests, 3);
-  check('satang-different totals stay separate groups', n.groups.length === 3, JSON.stringify(n.groups.map(g => g.total)));
-  check('groups sorted largest first', n.groups[0].total === 50434 && n.groups[1].total === 50432 && n.groups[2].total === 46901);
+  check('satang-apart bills group once rounded', n.groups.length === 2, JSON.stringify(n.groups.map(g => g.rTotal)));
+  check('Aum+Bee share one ฿504 line, Cee ฿469 alone',
+    n.groups[0].rTotal === 504 && n.groups[0].members.join(',') === '0,1' &&
+    n.groups[1].rTotal === 469 && n.groups[1].members.join(',') === '2', JSON.stringify(n.groups));
+  check('exact satang totals still intact underneath',
+    n.people[0].total === 50434 && n.people[1].total === 50432 && n.people[2].total === 46901);
   const covered = n.groups.flatMap(g => g.members).sort().join(',');
   check('groups partition every person exactly once', covered === '0,1,2', covered);
-  const groupSum = n.groups.reduce((a, g) => a + g.total * g.members.length, 0);
-  check('sum of group amount × member count = grand total', groupSum === n.grandTotal, groupSum + ' vs ' + n.grandTotal);
+  check('every rounded amount within half a baht of exact',
+    n.people.every(p => Math.abs(p.rTotal * 100 - p.total) <= 50));
+  check('rounded breakdown rows match rounded per-restaurant shares',
+    n.groups[0].rByRest.join(',') === '153,351' && n.groups[1].rByRest.join(',') === '118,351', JSON.stringify(n.groups.map(g => g.rByRest)));
 }
 
 console.log(failed === 0 ? `PASS — ${passed} checks, 0 failures` : `${failed} FAILURES (${passed} passed)`);
