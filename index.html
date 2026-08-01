@@ -20,7 +20,7 @@
      --clay-dark the deeper blue for small accents where #7ea5dc is too light. */
   --paper:#ede4d3; --card:#f7f0e5;
   --clay:#7ea5dc; --clay-dark:#4a79b8;
-  --ink:#24211c; --ink-soft:#847b6d; --rule:#d9cdb6; --ok:#4e7a52; --warn:#b03636;
+  --ink:#24211c; --ink-soft:#6b6357; --rule:#d9cdb6; --ok:#4e7a52; --warn:#b03636;
   --serif:Georgia,'Times New Roman',serif;
   --mono:'Courier New',Courier,monospace;
   --round:ui-rounded,-apple-system,'SF Pro Rounded','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
@@ -75,7 +75,7 @@ section{margin-bottom:26px}
 .item-top input.num{width:92px}
 .item-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
 .chip{border:1.5px solid var(--rule);background:none;border-radius:14px;padding:4px 11px;font-size:13px;color:var(--ink-soft)}
-.chip.on{border-color:var(--pc,var(--clay));background:var(--pc,var(--clay));color:#fff}
+.chip.on{border-color:var(--ink);background:var(--ink);color:var(--card)}
 .divbadge{font-family:var(--round);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
 .unassigned{font-size:12px;color:var(--warn);margin-left:auto}
 /* charges */
@@ -104,10 +104,10 @@ section{margin-bottom:26px}
 .bill-sub{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
 .bill-rest{margin:14px 0}
 .bill-rest-name{font-weight:700;font-size:16px;margin-bottom:6px}
-.bill-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2.5px 0;color:var(--ink);font-variant-numeric:tabular-nums}
+.bill-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2.5px 0;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .bill-line .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bill-line.soft{color:var(--ink-soft)}
-.bill-line.rt{border-top:1px dashed var(--rule);margin-top:5px;padding-top:6px;font-weight:700;font-size:14px}
+.bill-line.rt{border-top:1px dashed var(--rule);margin-top:5px;padding-top:6px;font-weight:700;font-size:14px;color:var(--ink)}
 .bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-size:13.5px;font-weight:600}
 .bill-transfer .amt{color:var(--clay-dark);font-weight:800}
 .bill-foot{text-align:center;font-size:10.5px;color:var(--ink-soft);margin-top:10px}
@@ -116,13 +116,10 @@ section{margin-bottom:26px}
 .slip-date{font-size:11px;color:var(--ink-soft);margin-top:3px}
 .bill.night .bill-owes{font-size:34px;margin-top:10px}
 .thanks{text-align:center;font-size:12.5px;font-weight:700;margin-top:12px}
-/* person tags: initials in a circle (coloured in the app, plain ink on the slip) */
-.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none;font-family:var(--round)}
-.ptag.mono{background:transparent;border:1.5px solid var(--ink);color:var(--ink)}
-.pchip .ptag{margin-left:-4px}
+/* person tags: initials in a circle, inked to match the row they sit in */
+.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;background:transparent;border:1.5px solid currentColor;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none;font-family:var(--round)}
 /* night slip — item lines with sharer tags */
-.slip-item{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:2.5px 0;font-variant-numeric:tabular-nums}
-.slip-item.soft{color:var(--ink-soft)}
+.slip-item{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:2.5px 0;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .slip-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .slip-item .tags{display:inline-flex;flex:none;gap:3px}
 .slip-item .pr{margin-left:auto;flex:none}
@@ -297,11 +294,10 @@ function fmtB(baht){return '฿'+baht.toLocaleString('en-US');} /* whole-baht tr
 function fmtR(s){return fmtB(Math.round(s/100));} /* satang → whole-baht display on slips */
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-/* person colours: retro-receipt palette by seat order; tags show the first two letters */
-const PCOLORS=['#cf541c','#4a79b8','#4e7a52','#8058a5','#c25b78','#2f8391','#a8790f','#5b67b8','#9d3d76','#673c33'];
-function pcolor(pi){return PCOLORS[pi%PCOLORS.length];}
-function tagHTML(pi,mono){const nm=(state.people[pi]||'').trim(),init=esc(Array.from(nm).slice(0,2).join('').toUpperCase());
-  return mono?'<span class="ptag mono">'+init+'</span>':'<span class="ptag" style="background:'+pcolor(pi)+'">'+init+'</span>';}
+/* Names are entered as two letters, so a person's tag is simply their name. */
+const NAME_LEN=2;
+function cleanName(s){return Array.from(String(s||'').trim()).slice(0,NAME_LEN).join('').toUpperCase();}
+function tagHTML(pi){return '<span class="ptag">'+esc(cleanName(state.people[pi]))+'</span>';}
 
 /* ================= rendering ================= */
 function chargeLabel(c,name){
@@ -317,8 +313,8 @@ function render(){
   h+='<section><div class="sec-label">1 · Who\'s eating</div>';
   h+='<div class="chips-row">';
   if(!P.length)h+='<span class="empty">Add everyone once — they carry through every restaurant tonight.</span>';
-  P.forEach((p,i)=>{h+='<span class="pchip">'+tagHTML(i)+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
-  h+='</div><div class="add-person"><input id="newPersonName" placeholder="Name (e.g. Aum)" autocomplete="off"><button class="btn" data-action="add-person">Add</button></div></section>';
+  P.forEach((p,i)=>{h+='<span class="pchip">'+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
+  h+='</div><div class="add-person"><input id="newPersonName" placeholder="Two letters (e.g. AU)" maxlength="2" autocapitalize="characters" autocomplete="off"><button class="btn" data-action="add-person">Add</button></div></section>';
 
   /* --- restaurants --- */
   h+='<section><div class="sec-label">2 · Restaurants</div>';
@@ -350,7 +346,7 @@ function restaurantHTML(r){
     h+='<div class="item-chips">';
     P.forEach((p,pi)=>{
       const on=it.sharers.includes(pi);
-      h+='<button class="chip'+(on?' on':'')+'" style="--pc:'+pcolor(pi)+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
+      h+='<button class="chip'+(on?' on':'')+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
     });
     h+='<span class="divbadge" data-badge="'+it.id+'"></span></div></div>';
   });
@@ -452,7 +448,7 @@ function nightSlipHTML(){
       if(!sharers.length)h+='<div class="slip-item soft"><span class="nm">'+esc(it.name||'Item')+' (not counted)</span><span class="pr">'+price+'</span></div>';
       else{
         /* everyone shared it → no tags, just the price; a subset → their initials */
-        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(pi=>tagHTML(pi,true)).join('')+'</span>';
+        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(tagHTML).join('')+'</span>';
         h+='<div class="slip-item"><span class="nm">'+esc(it.name||'Item')+'</span>'+tags+'<span class="pr">'+price+'</span></div>';
       }
     });
@@ -504,9 +500,9 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-action]');if(!b)return;
   const a=b.dataset.action,rid=b.dataset.rid,iid=b.dataset.iid;
   if(a==='add-person'){
-    const inp=$('#newPersonName'),name=inp.value.trim();
+    const inp=$('#newPersonName'),name=cleanName(inp.value);
     if(!name)return;
-    if(state.people.includes(name)){toast('That name is already in the list.');return;}
+    if(state.people.includes(name)){toast('Those initials are already in the list.');return;}
     state.people.push(name);
     state.restaurants.forEach(r=>r.items.forEach(it=>{/* new person not auto-added to old items */}));
     save();render();$('#newPersonName').focus();
