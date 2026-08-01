@@ -106,6 +106,13 @@ section{margin-bottom:26px}
 .bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-family:var(--mono);font-size:15px;font-weight:700}
 .bill-transfer .amt{color:var(--clay)}
 .bill-foot{text-align:center;font-size:11px;color:var(--ink-soft);font-style:italic;margin-top:10px}
+/* combined night slip — settle-up block */
+.settle{border-top:2px dashed var(--rule);margin-top:14px;padding-top:10px}
+.settle-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);text-align:center;margin-bottom:6px}
+.settle-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:3px 0}
+.settle-name{font-size:16px;font-weight:700}
+.settle-amt{font-size:19px;font-weight:700;color:var(--clay)}
+.settle-src{font-size:11.5px;color:var(--ink-soft);margin:-2px 0 6px;line-height:1.45}
 /* misc */
 .empty{color:var(--ink-soft);font-style:italic;font-size:14px;padding:6px 2px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));background:var(--ink);color:var(--card);padding:10px 18px;border-radius:4px;font-size:14px;z-index:70;max-width:88vw;text-align:center;transition:opacity .3s;opacity:0;pointer-events:none}
@@ -234,6 +241,22 @@ function computeRestaurant(rest,nPeople){
   return{foodSubtotal,serviceAmt,vatAmt,total,perPerson};
 }
 /* ===CALC-END=== */
+
+/* Night summary: per-person totals across every restaurant, built only from
+   computeRestaurant output — no new money maths, all integer satang.
+   Extracted by calc.test.js (===NIGHT-START/END===) so the combined slip's
+   settle block is proven to sum exactly to the restaurant totals. */
+/* ===NIGHT-START=== */
+function computeNight(restaurants,nPeople){
+  const perRest=restaurants.map(r=>computeRestaurant(r,nPeople));
+  const grandTotal=perRest.reduce((a,c)=>a+c.total,0);
+  const people=Array.from({length:nPeople},(_,pi)=>{
+    const byRest=perRest.map(c=>c.perPerson[pi]?c.perPerson[pi].total:0);
+    return{total:byRest.reduce((a,b)=>a+b,0),byRest};
+  });
+  return{perRest,people,grandTotal};
+}
+/* ===NIGHT-END=== */
 
 function fmt(s){return '฿'+(s/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -364,14 +387,53 @@ function personBillHTML(pi,standalone){
   h+='<div class="bill-transfer">Please transfer <span class="amt">'+fmt(grand)+'</span></div>';
   h+='<div class="bill-foot">Split &amp; Settle · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>';
   h+='</div>';
-  if(!standalone)h+='<button class="btn btn-wide" data-action="export" data-pi="'+pi+'" style="margin-top:-8px">Save '+esc(P[pi])+'’s bill as image</button>';
+  if(!standalone)h+='<button class="btn-ghost btn-wide" data-action="export" data-pi="'+pi+'" style="margin-top:-10px">Save '+esc(P[pi])+'’s bill as image</button>';
+  return h;
+}
+
+/* One slip for the whole night: every restaurant's receipt, then who transfers what. */
+function nightSlipHTML(){
+  const P=state.people,R=state.restaurants;
+  const night=computeNight(R,P.length);
+  const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  let h='<div class="bill" data-night-slip="1">'+
+    '<div class="bill-head"><div class="bill-name">Split &amp; Settle</div>'+
+    '<div class="bill-sub">'+esc(date)+'</div>'+
+    '<div class="bill-owes">'+fmt(night.grandTotal)+'</div>'+
+    '<div class="bill-sub">grand total tonight</div></div>';
+  R.forEach((r,ri)=>{
+    const c=night.perRest[ri];
+    h+='<div class="bill-rest"><div class="bill-rest-name">'+esc(r.name||'Restaurant')+'</div>';
+    r.items.forEach(it=>{
+      const n=(it.sharers||[]).filter(pi=>pi>=0&&pi<P.length).length;
+      const price=fmt(toSatang(it.price));
+      if(!n)h+='<div class="bill-line soft"><span class="ln">'+esc(it.name||'Item')+' <em>— not counted</em></span><span>'+price+'</span></div>';
+      else h+='<div class="bill-line"><span class="ln">'+esc(it.name||'Item')+(n>1?' <span style="color:var(--clay)">÷'+n+'</span>':'')+'</span><span>'+price+'</span></div>';
+    });
+    h+='<div class="bill-line soft"><span>food subtotal</span><span>'+fmt(c.foodSubtotal)+'</span></div>'+
+       '<div class="bill-line soft"><span>'+esc(chargeLabel(r.service,'service').toLowerCase())+'</span><span>'+fmt(c.serviceAmt)+'</span></div>'+
+       '<div class="bill-line soft"><span>'+esc(chargeLabel(r.vat,'VAT'))+' <em style="font-size:11px">on food + service</em></span><span>'+fmt(c.vatAmt)+'</span></div>'+
+       '<div class="bill-line rt"><span>restaurant total</span><span>'+fmt(c.total)+'</span></div></div>';
+  });
+  const order=P.map((_,pi)=>pi).sort((a,b)=>night.people[b].total-night.people[a].total||a-b);
+  h+='<div class="settle"><div class="settle-title">Settle up</div>';
+  order.forEach(pi=>{
+    const per=night.people[pi];
+    h+='<div class="settle-row"><span class="settle-name">'+esc(P[pi])+'</span><span class="settle-amt num">'+fmt(per.total)+'</span></div>';
+    const parts=[];
+    R.forEach((r,ri)=>{if(per.byRest[ri]>0)parts.push(esc(r.name||'Restaurant')+' '+fmt(per.byRest[ri]));});
+    if(parts.length)h+='<div class="settle-src num">'+parts.join(' · ')+'</div>';
+  });
+  h+='</div><div class="bill-transfer">Please transfer the amount next to your name.</div>'+
+     '<div class="bill-foot">Split &amp; Settle · '+esc(date)+'</div></div>';
   return h;
 }
 
 function renderSummary(){
   const el=$('#summary');if(!el)return;
   if(!state.people.length||!state.restaurants.length){el.innerHTML='<p class="empty">Add people and at least one restaurant to see each person’s bill.</p>';return;}
-  el.innerHTML=state.people.map((_,pi)=>personBillHTML(pi,false)).join('');
+  el.innerHTML='<button class="btn btn-clay btn-wide" data-action="export-night">Save tonight&#39;s summary as image</button>'+
+    state.people.map((_,pi)=>personBillHTML(pi,false)).join('');
 }
 
 /* ================= mutations ================= */
@@ -439,6 +501,7 @@ document.addEventListener('click',e=>{
   }
   else if(a==='scan'){startScan();}
   else if(a==='export'){exportBill(Number(b.dataset.pi),b);}
+  else if(a==='export-night'){exportNight(b);}
   else if(a==='start-over'){
     if(confirm('Clear everyone and every restaurant from tonight?')){
       const k=state.apiKey;state=blankState();state.apiKey=k;save();render();
@@ -537,6 +600,41 @@ async function exportBill(pi,btn){
     a.href=canvas.toDataURL('image/png');
     document.body.appendChild(a);a.click();a.remove();
     toast('Saved bill-'+name+'.png');
+  }catch(e){toast('Couldn’t render the image — try again.');}
+  finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;}
+}
+
+/* ================= export combined night summary as PNG ================= */
+async function exportNight(btn){
+  if(typeof html2canvas!=='function'){toast('Image export unavailable.');return;}
+  const stage=$('#exportStage');
+  stage.innerHTML='<div style="background:var(--card);padding:8px 0 14px">'+nightSlipHTML()+'</div>';
+  btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
+  try{
+    await new Promise(r=>setTimeout(r,50));
+    const el=stage.firstChild;
+    /* iOS Safari silently blanks canvases over ~16.7M px (long edges bite even sooner), so keep width×scale ≤ 4096 and total area ≤ 16M px — a smaller scale beats a broken image. */
+    const w=el.offsetWidth||400,hgt=el.offsetHeight||1;
+    let scale=Math.min(3,Math.sqrt(16000000/(w*hgt)),4096/w);
+    scale=Math.max(1.5,scale);
+    const canvas=await html2canvas(el,{scale,backgroundColor:'#fffdf7',logging:false});
+    const d=new Date();
+    const fname='split-and-settle-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.png';
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    if(!blob)throw new Error('toBlob failed');
+    const file=new File([blob],fname,{type:'image/png'});
+    let done=false;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:'Split & Settle'});done=true;toast('Shared '+fname);}
+      catch(err){if(err&&err.name==='AbortError')done=true;/* user closed the share sheet — don't also download */}
+    }
+    if(!done){
+      const a=document.createElement('a');
+      a.download=fname;a.href=URL.createObjectURL(blob);
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+      toast('Saved '+fname);
+    }
   }catch(e){toast('Couldn’t render the image — try again.');}
   finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;}
 }

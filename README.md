@@ -13,7 +13,7 @@ Add everyone once, then add each restaurant as the night goes on. Assign each di
 
 Service and VAT can each be entered as a percentage (defaults 10% / 7%) or as the exact baht amount printed on the receipt (`% / ฿` toggle), so the app total always matches the real bill. Each person's share of service and VAT is proportional to what they ordered, allocated with a largest-remainder method so shares sum to the restaurant total **exactly** — no rounding drift.
 
-The summary shows one bill per person across all restaurants, with a "Save [name]'s bill as image" button that exports a receipt-style PNG (via html2canvas, inlined) for dropping into LINE/WhatsApp.
+The summary shows one bill per person across all restaurants. "Save tonight's summary as image" exports the whole night as **one** receipt-style PNG — every restaurant's items and totals plus a settle-up block (one line per person, largest first) — and opens the native share sheet where supported (LINE/WhatsApp), falling back to a download. Each person's card keeps a smaller "Save [name]'s bill as image" button for exporting just their own slip (via html2canvas, inlined; render scale adapts so tall slips stay within iOS canvas limits).
 
 ## Receipt scanning
 

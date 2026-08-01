@@ -16,8 +16,10 @@ const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 const m = html.match(/\/\* ===CALC-START=== \*\/([\s\S]*?)\/\* ===CALC-END=== \*\//);
 if (!m) { console.error('FAIL: calc block not found in index.html'); process.exit(1); }
-const { toSatang, chargeSatang, allocateExact, computeRestaurant } =
-  new Function(m[1] + '; return {toSatang, chargeSatang, allocateExact, computeRestaurant};')();
+const mNight = html.match(/\/\* ===NIGHT-START=== \*\/([\s\S]*?)\/\* ===NIGHT-END=== \*\//);
+if (!mNight) { console.error('FAIL: night block not found in index.html'); process.exit(1); }
+const { toSatang, chargeSatang, allocateExact, computeRestaurant, computeNight } =
+  new Function(m[1] + mNight[1] + '; return {toSatang, chargeSatang, allocateExact, computeRestaurant, computeNight};')();
 
 let passed = 0, failed = 0;
 function check(name, cond, detail) {
@@ -117,6 +119,89 @@ function check(name, cond, detail) {
   check('service proportional', Math.abs(c.perPerson[0].service - 3 * c.perPerson[1].service) <= 3);
   check('VAT proportional in ฿ mode', Math.abs(c.perPerson[0].vat - 3 * c.perPerson[1].vat) <= 3);
   check('still sums exactly', c.perPerson[0].total + c.perPerson[1].total === c.total);
+}
+
+/* ---- 6. Combined night slip: worked example (mixed % and ฿ modes) ---- */
+{
+  // 3 people (0=Aum, 1=Bee, 2=Cee), 2 restaurants.
+  const restaurants = [
+    { items: [
+        { name: 'Larb', price: '180', sharers: [0, 1] },
+        { name: 'Som Tam', price: '120', sharers: [0, 1, 2] },
+        { name: 'Rice', price: '60', sharers: [2] }],
+      service: { on: true, mode: 'pct', value: 10 },
+      vat: { on: true, mode: 'pct', value: 7 } },
+    { items: [{ name: 'Cocktails', price: '900', sharers: [0, 1, 2] }],
+      service: { on: true, mode: 'amt', value: 85 },
+      vat: { on: true, mode: 'amt', value: 68.95 } }
+  ];
+  const n = computeNight(restaurants, 3);
+  check('night: restaurant A total 423.72', n.perRest[0].total === 42372, n.perRest[0].total);
+  check('night: restaurant B total 1053.95', n.perRest[1].total === 105395, n.perRest[1].total);
+  check('night: grand total 1477.67', n.grandTotal === 147767, n.grandTotal);
+  // Engine-verified settle figures (largest-remainder satang ties go to the earlier person):
+  check('night: Aum owes 504.34', n.people[0].total === 50434, n.people[0].total);
+  check('night: Bee owes 504.32', n.people[1].total === 50432, n.people[1].total);
+  check('night: Cee owes 469.01', n.people[2].total === 46901, n.people[2].total);
+  const settleSum = n.people.reduce((a, p) => a + p.total, 0);
+  check('night: settle block sums to grand total exactly', settleSum === n.grandTotal, settleSum + ' vs ' + n.grandTotal);
+  check('night: each breakdown line sums to that person\'s total',
+    n.people.every(p => p.byRest.reduce((a, b) => a + b, 0) === p.total));
+}
+
+/* ---- 7. Night settle block reconciles across randomized nights, % and ฿ modes ---- */
+{
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const price = () => (Math.floor(rnd() * 99900) + 100) / 100;
+  let bad = '';
+  for (let trial = 0; trial < 500 && !bad; trial++) {
+    const nPeople = 2 + Math.floor(rnd() * 7);
+    const amtMode = trial % 2 === 1;
+    const restaurants = [];
+    const nRest = 1 + Math.floor(rnd() * 4);
+    for (let rI = 0; rI < nRest; rI++) {
+      const items = [];
+      const nItems = 1 + Math.floor(rnd() * 8);
+      for (let i = 0; i < nItems; i++) {
+        const sharers = [];
+        for (let p = 0; p < nPeople; p++) if (rnd() < 0.5) sharers.push(p);
+        items.push({ name: 'i' + i, price: String(price()), sharers }); // empty sharers allowed → unassigned item
+      }
+      restaurants.push({
+        items,
+        service: { on: rnd() < 0.9, mode: amtMode ? 'amt' : 'pct', value: amtMode ? price() : 10 },
+        vat: { on: rnd() < 0.9, mode: amtMode ? 'amt' : 'pct', value: amtMode ? price() : 7 }
+      });
+    }
+    const night = computeNight(restaurants, nPeople);
+    const settleSum = night.people.reduce((a, p) => a + p.total, 0);
+    const restSum = night.perRest.reduce((a, c) => a + c.total, 0);
+    if (settleSum !== restSum || night.grandTotal !== restSum)
+      bad = `trial ${trial} (${amtMode ? '฿' : '%'} mode): settle ${settleSum} vs restaurants ${restSum}`;
+  }
+  check('500 randomized nights: settle block = sum of restaurant totals, % and ฿ modes', bad === '', bad);
+}
+
+/* ---- 8. Edge cases the combined slip must survive ---- */
+{
+  // Person 2 ordered nothing: still listed, at exactly 0.
+  const night = computeNight([{
+    items: [{ name: 'Pad Thai', price: '95', sharers: [0, 1] }],
+    service: { on: true, mode: 'pct', value: 10 },
+    vat: { on: true, mode: 'pct', value: 7 }
+  }], 3);
+  check('zero-assigned person present at exactly 0 satang',
+    night.people.length === 3 && night.people[2].total === 0, JSON.stringify(night.people[2]));
+  // Restaurant with an unassigned item: excluded from totals, still balances exactly.
+  const c = computeRestaurant({
+    items: [{ name: 'counted', price: '200', sharers: [0, 1] }, { name: 'orphan', price: '999', sharers: [] }],
+    service: { on: true, mode: 'amt', value: 22.10 },
+    vat: { on: true, mode: 'pct', value: 7 }
+  }, 2);
+  check('unassigned item excluded from food subtotal', c.foodSubtotal === 20000, c.foodSubtotal);
+  check('unassigned-item restaurant still balances exactly',
+    c.perPerson.reduce((a, p) => a + p.total, 0) === c.total);
 }
 
 console.log(failed === 0 ? `PASS — ${passed} checks, 0 failures` : `${failed} FAILURES (${passed} passed)`);
