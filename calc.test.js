@@ -179,6 +179,10 @@ function check(name, cond, detail) {
     const restSum = night.perRest.reduce((a, c) => a + c.total, 0);
     if (settleSum !== restSum || night.grandTotal !== restSum)
       bad = `trial ${trial} (${amtMode ? '฿' : '%'} mode): settle ${settleSum} vs restaurants ${restSum}`;
+    const groupSum = night.groups.reduce((a, g) => a + g.total * g.members.length, 0);
+    const groupCnt = night.groups.reduce((a, g) => a + g.members.length, 0);
+    if (groupSum !== restSum || groupCnt !== nPeople)
+      bad = `trial ${trial}: groups sum ${groupSum} vs ${restSum}, cover ${groupCnt}/${nPeople}`;
   }
   check('500 randomized nights: settle block = sum of restaurant totals, % and ฿ modes', bad === '', bad);
 }
@@ -202,6 +206,38 @@ function check(name, cond, detail) {
   check('unassigned item excluded from food subtotal', c.foodSubtotal === 20000, c.foodSubtotal);
   check('unassigned-item restaurant still balances exactly',
     c.perPerson.reduce((a, p) => a + p.total, 0) === c.total);
+}
+
+/* ---- 9. Settle-up grouping: identical bills group; satang-different bills must not ---- */
+{
+  // Two people share everything evenly with even satang → identical bills → one group.
+  const nEq = computeNight([{
+    items: [{ name: 'Set', price: '500', sharers: [0, 1] }],
+    service: { on: true, mode: 'pct', value: 10 },
+    vat: { on: true, mode: 'pct', value: 7 }
+  }], 2);
+  check('identical bills collapse into one group', nEq.groups.length === 1 && nEq.groups[0].members.length === 2, JSON.stringify(nEq.groups));
+  check('grouped amount × members = restaurant total', nEq.groups[0].total * 2 === nEq.perRest[0].total);
+  // Worked example: Aum and Bee differ by 2 satang (largest-remainder ties) → separate lines,
+  // because the printed amount is the exact transfer amount.
+  const rests = [
+    { items: [
+        { name: 'Larb', price: '180', sharers: [0, 1] },
+        { name: 'Som Tam', price: '120', sharers: [0, 1, 2] },
+        { name: 'Rice', price: '60', sharers: [2] }],
+      service: { on: true, mode: 'pct', value: 10 },
+      vat: { on: true, mode: 'pct', value: 7 } },
+    { items: [{ name: 'Cocktails', price: '900', sharers: [0, 1, 2] }],
+      service: { on: true, mode: 'amt', value: 85 },
+      vat: { on: true, mode: 'amt', value: 68.95 } }
+  ];
+  const n = computeNight(rests, 3);
+  check('satang-different totals stay separate groups', n.groups.length === 3, JSON.stringify(n.groups.map(g => g.total)));
+  check('groups sorted largest first', n.groups[0].total === 50434 && n.groups[1].total === 50432 && n.groups[2].total === 46901);
+  const covered = n.groups.flatMap(g => g.members).sort().join(',');
+  check('groups partition every person exactly once', covered === '0,1,2', covered);
+  const groupSum = n.groups.reduce((a, g) => a + g.total * g.members.length, 0);
+  check('sum of group amount × member count = grand total', groupSum === n.grandTotal, groupSum + ' vs ' + n.grandTotal);
 }
 
 console.log(failed === 0 ? `PASS — ${passed} checks, 0 failures` : `${failed} FAILURES (${passed} passed)`);

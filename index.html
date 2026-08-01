@@ -70,7 +70,7 @@ section{margin-bottom:26px}
 .item-top input.num{width:92px}
 .item-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
 .chip{border:1.5px solid var(--rule);background:none;border-radius:14px;padding:4px 11px;font-size:13px;color:var(--ink-soft)}
-.chip.on{border-color:var(--clay);background:var(--clay);color:#fff}
+.chip.on{border-color:var(--pc,var(--clay));background:var(--pc,var(--clay));color:#fff}
 .divbadge{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
 .unassigned{font-size:12px;color:var(--warn);margin-left:auto;font-style:italic}
 /* charges */
@@ -106,12 +106,24 @@ section{margin-bottom:26px}
 .bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-family:var(--mono);font-size:15px;font-weight:700}
 .bill-transfer .amt{color:var(--clay)}
 .bill-foot{text-align:center;font-size:11px;color:var(--ink-soft);font-style:italic;margin-top:10px}
+/* person colour tags (initials in a circle) */
+.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none}
+.pchip .ptag{margin-left:-4px}
+/* combined night slip — item lines with sharer tags */
+.slip-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:13.5px;padding:2px 0}
+.slip-item.soft{color:var(--ink-soft)}
+.slip-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slip-item .tags{display:inline-flex;flex:none}
+.slip-item .tags .ptag{margin-left:-5px;box-shadow:0 0 0 1.5px var(--card)}
+.slip-item .tags .ptag:first-child{margin-left:0}
+.slip-item .pr{margin-left:auto;flex:none}
 /* combined night slip — settle-up block */
 .settle{border-top:2px dashed var(--rule);margin-top:14px;padding-top:10px}
 .settle-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);text-align:center;margin-bottom:6px}
 .settle-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:3px 0}
-.settle-name{font-size:16px;font-weight:700}
-.settle-amt{font-size:19px;font-weight:700;color:var(--clay)}
+.settle-who{font-size:15px;font-weight:700;line-height:1.7;min-width:0}
+.settle-amt{font-size:19px;font-weight:700;color:var(--clay);flex:none;white-space:nowrap}
+.settle-amt .each{font-size:11px;color:var(--ink-soft);font-weight:400}
 .settle-src{font-size:11.5px;color:var(--ink-soft);margin:-2px 0 6px;line-height:1.45}
 /* misc */
 .empty{color:var(--ink-soft);font-style:italic;font-size:14px;padding:6px 2px}
@@ -254,12 +266,28 @@ function computeNight(restaurants,nPeople){
     const byRest=perRest.map(c=>c.perPerson[pi]?c.perPerson[pi].total:0);
     return{total:byRest.reduce((a,b)=>a+b,0),byRest};
   });
-  return{perRest,people,grandTotal};
+  /* Settle-up groups: people with byte-identical bills (same share at every
+     restaurant) collapse into one line. Grouping is by the full breakdown, not
+     just the total, so an amount is only ever shown once per person owing it —
+     bills a satang apart stay separate because the transfer amounts differ. */
+  const groups=[];const gIdx=new Map();
+  people.forEach((p,pi)=>{
+    const key=p.byRest.join(',');
+    if(gIdx.has(key))groups[gIdx.get(key)].members.push(pi);
+    else{gIdx.set(key,groups.length);groups.push({total:p.total,byRest:p.byRest,members:[pi]});}
+  });
+  groups.sort((a,b)=>b.total-a.total);
+  return{perRest,people,groups,grandTotal};
 }
 /* ===NIGHT-END=== */
 
 function fmt(s){return '฿'+(s/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* person colours: fixed palette by seat order; tags show the first two letters */
+const PCOLORS=['#b6552e','#2f6bad','#3e7a4e','#8e4fa8','#c2374d','#17858c','#a8790f','#5b67b8','#9d3d76','#6d4c41'];
+function pcolor(pi){return PCOLORS[pi%PCOLORS.length];}
+function tagHTML(pi){const nm=(state.people[pi]||'').trim();return '<span class="ptag" style="background:'+pcolor(pi)+'">'+esc(Array.from(nm).slice(0,2).join('').toUpperCase())+'</span>';}
 
 /* ================= rendering ================= */
 function chargeLabel(c,name){
@@ -275,7 +303,7 @@ function render(){
   h+='<section><div class="sec-label">1 · Who\'s eating</div>';
   h+='<div class="chips-row">';
   if(!P.length)h+='<span class="empty">Add everyone once — they carry through every restaurant tonight.</span>';
-  P.forEach((p,i)=>{h+='<span class="pchip">'+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
+  P.forEach((p,i)=>{h+='<span class="pchip">'+tagHTML(i)+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
   h+='</div><div class="add-person"><input id="newPersonName" placeholder="Name (e.g. Aum)" autocomplete="off"><button class="btn" data-action="add-person">Add</button></div></section>';
 
   /* --- restaurants --- */
@@ -308,7 +336,7 @@ function restaurantHTML(r){
     h+='<div class="item-chips">';
     P.forEach((p,pi)=>{
       const on=it.sharers.includes(pi);
-      h+='<button class="chip'+(on?' on':'')+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
+      h+='<button class="chip'+(on?' on':'')+'" style="--pc:'+pcolor(pi)+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
     });
     h+='<span class="divbadge" data-badge="'+it.id+'"></span></div></div>';
   });
@@ -371,7 +399,7 @@ function personBillHTML(pi,standalone){
     grand+=pp.total;
     let b='<div class="bill-rest"><div class="bill-rest-name">'+esc(r.name||'Restaurant')+'</div>';
     pp.items.forEach(it=>{
-      b+='<div class="bill-line"><span class="ln">'+esc(it.name)+(it.n>1?' <span style="color:var(--clay)">÷'+it.n+'</span>':'')+'</span><span>'+fmt(it.share)+'</span></div>';
+      b+='<div class="bill-line"><span class="ln">'+esc(it.name)+'</span><span>'+fmt(it.share)+'</span></div>';
     });
     b+='<div class="bill-line soft"><span>food subtotal</span><span>'+fmt(pp.food)+'</span></div>';
     b+='<div class="bill-line soft"><span>'+esc(chargeLabel(r.service,'service').toLowerCase())+'</span><span>'+fmt(pp.service)+'</span></div>';
@@ -405,23 +433,27 @@ function nightSlipHTML(){
     const c=night.perRest[ri];
     h+='<div class="bill-rest"><div class="bill-rest-name">'+esc(r.name||'Restaurant')+'</div>';
     r.items.forEach(it=>{
-      const n=(it.sharers||[]).filter(pi=>pi>=0&&pi<P.length).length;
+      const sharers=(it.sharers||[]).filter(pi=>pi>=0&&pi<P.length).sort((a,b)=>a-b);
       const price=fmt(toSatang(it.price));
-      if(!n)h+='<div class="bill-line soft"><span class="ln">'+esc(it.name||'Item')+' <em>— not counted</em></span><span>'+price+'</span></div>';
-      else h+='<div class="bill-line"><span class="ln">'+esc(it.name||'Item')+(n>1?' <span style="color:var(--clay)">÷'+n+'</span>':'')+'</span><span>'+price+'</span></div>';
+      if(!sharers.length)h+='<div class="slip-item soft"><span class="nm">'+esc(it.name||'Item')+' <em>— not counted</em></span><span class="pr">'+price+'</span></div>';
+      else{
+        /* everyone shared it → no tags, just the price; a subset → their colour tags */
+        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(tagHTML).join('')+'</span>';
+        h+='<div class="slip-item"><span class="nm">'+esc(it.name||'Item')+'</span>'+tags+'<span class="pr">'+price+'</span></div>';
+      }
     });
     h+='<div class="bill-line soft"><span>food subtotal</span><span>'+fmt(c.foodSubtotal)+'</span></div>'+
        '<div class="bill-line soft"><span>'+esc(chargeLabel(r.service,'service').toLowerCase())+'</span><span>'+fmt(c.serviceAmt)+'</span></div>'+
        '<div class="bill-line soft"><span>'+esc(chargeLabel(r.vat,'VAT'))+' <em style="font-size:11px">on food + service</em></span><span>'+fmt(c.vatAmt)+'</span></div>'+
        '<div class="bill-line rt"><span>restaurant total</span><span>'+fmt(c.total)+'</span></div></div>';
   });
-  const order=P.map((_,pi)=>pi).sort((a,b)=>night.people[b].total-night.people[a].total||a-b);
   h+='<div class="settle"><div class="settle-title">Settle up</div>';
-  order.forEach(pi=>{
-    const per=night.people[pi];
-    h+='<div class="settle-row"><span class="settle-name">'+esc(P[pi])+'</span><span class="settle-amt num">'+fmt(per.total)+'</span></div>';
+  night.groups.forEach(g=>{
+    const who=g.members.map(pi=>tagHTML(pi)+' '+esc(P[pi])).join(', ');
+    h+='<div class="settle-row"><span class="settle-who">'+who+'</span>'+
+       '<span class="settle-amt num">'+fmt(g.total)+(g.members.length>1?' <span class="each">each</span>':'')+'</span></div>';
     const parts=[];
-    R.forEach((r,ri)=>{if(per.byRest[ri]>0)parts.push(esc(r.name||'Restaurant')+' '+fmt(per.byRest[ri]));});
+    R.forEach((r,ri)=>{if(g.byRest[ri]>0)parts.push(esc(r.name||'Restaurant')+' '+fmt(g.byRest[ri]));});
     if(parts.length)h+='<div class="settle-src num">'+parts.join(' · ')+'</div>';
   });
   h+='</div><div class="bill-transfer">Please transfer the amount next to your name.</div>'+
