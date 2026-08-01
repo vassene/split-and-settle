@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Split &amp; Settle</title>
 <meta name="description" content="Split Thai restaurant bills across a night out — service, VAT, one bill per person.">
-<meta name="theme-color" content="#b6552e">
+<meta name="theme-color" content="#cf541c">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,16 +15,19 @@
 <meta name="apple-mobile-web-app-title" content="Split">
 <style>
 :root{
-  --paper:#f7f3e9; --card:#fffdf7; --clay:#b6552e; --clay-dark:#94431f;
-  --ink:#22201b; --ink-soft:#6b665c; --rule:#d8d0bd; --ok:#3e7a4e; --warn:#b03636;
+  /* retro receipt palette: Book Pages paper, Terracotta accent, Bark ink, Butter slip, Clear Skies */
+  --paper:#f7f0e5; --card:#fffdf8; --butter:#fae3b0; --sky:#7ea5dc;
+  --clay:#cf541c; --clay-dark:#a84315;
+  --ink:#673c33; --ink-soft:#9b7b6e; --rule:#dcc9a8; --ok:#4e7a52; --warn:#b03636;
   --serif:Georgia,'Times New Roman',serif;
   --mono:'Courier New',Courier,monospace;
+  --round:ui-rounded,-apple-system,'SF Pro Rounded','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
   font-family:var(--serif); color:var(--ink); background:var(--paper);
-  background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(182,85,46,.045) 31px,rgba(182,85,46,.045) 32px);
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(207,84,28,.05) 31px,rgba(207,84,28,.05) 32px);
   padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 48px) env(safe-area-inset-left);
   min-height:100vh;
 }
@@ -70,7 +73,7 @@ section{margin-bottom:26px}
 .item-top input.num{width:92px}
 .item-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
 .chip{border:1.5px solid var(--rule);background:none;border-radius:14px;padding:4px 11px;font-size:13px;color:var(--ink-soft)}
-.chip.on{border-color:var(--clay);background:var(--clay);color:#fff}
+.chip.on{border-color:var(--pc,var(--clay));background:var(--pc,var(--clay));color:#fff}
 .divbadge{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-left:auto;white-space:nowrap}
 .unassigned{font-size:12px;color:var(--warn);margin-left:auto;font-style:italic}
 /* charges */
@@ -88,24 +91,47 @@ section{margin-bottom:26px}
 .totals{margin-top:12px;border-top:2px dashed var(--rule);padding-top:10px;font-family:var(--mono);font-size:14.5px}
 .trow{display:flex;justify-content:space-between;gap:8px;padding:3px 0;color:var(--ink-soft)}
 .trow.grand{color:var(--ink);font-weight:700;font-size:16.5px;border-top:1.5px solid var(--ink);margin-top:6px;padding-top:8px}
-/* summary / person bills */
-.bill{position:relative;background:var(--card);border-radius:6px 6px 0 0;box-shadow:0 2px 10px rgba(34,32,27,.09);padding:20px 18px 22px;margin-bottom:26px}
+/* summary / person bills — rounded type, ink body, accent only on the amounts to transfer */
+.bill{position:relative;background:var(--card);border-radius:6px 6px 0 0;box-shadow:0 2px 10px rgba(34,32,27,.09);padding:20px 18px 22px;margin-bottom:26px;font-family:var(--round)}
 .bill::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px;
   background:conic-gradient(from -45deg at 50% 0,var(--card) 90deg,transparent 0) 50% 0/16px 10px repeat-x;
   filter:drop-shadow(0 3px 3px rgba(34,32,27,.07))}
 .bill-head{text-align:center;border-bottom:2px dashed var(--rule);padding-bottom:12px;margin-bottom:12px}
 .bill-name{font-size:20px;font-weight:700}
-.bill-owes{font-family:var(--mono);font-size:30px;font-weight:700;color:var(--clay);margin-top:4px;letter-spacing:-.5px}
-.bill-sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
-.bill-rest{margin:12px 0}
-.bill-rest-name{font-weight:700;font-size:15px;margin-bottom:5px}
-.bill-line{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:13.5px;padding:2px 0;color:var(--ink)}
+.bill-owes{font-size:32px;font-weight:800;color:var(--clay);margin-top:6px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.bill-sub{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
+.bill-rest{margin:14px 0}
+.bill-rest-name{font-weight:700;font-size:16px;margin-bottom:6px}
+.bill-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2.5px 0;color:var(--ink);font-variant-numeric:tabular-nums}
 .bill-line .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bill-line.soft{color:var(--ink-soft)}
-.bill-line.rt{border-top:1px dashed var(--rule);margin-top:4px;padding-top:5px;font-weight:700}
-.bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-family:var(--mono);font-size:15px;font-weight:700}
+.bill-line.rt{border-top:1px dashed var(--rule);margin-top:5px;padding-top:6px;font-weight:700;font-size:14px}
+.bill-transfer{border-top:2px dashed var(--rule);margin-top:14px;padding-top:12px;text-align:center;font-size:13.5px;font-weight:600}
 .bill-transfer .amt{color:var(--clay)}
-.bill-foot{text-align:center;font-size:11px;color:var(--ink-soft);font-style:italic;margin-top:10px}
+.bill-foot{text-align:center;font-size:10.5px;color:var(--ink-soft);margin-top:10px}
+/* night slip header */
+.slip-brand{font-size:13px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase}
+.slip-date{font-size:11px;color:var(--ink-soft);margin-top:3px}
+.bill.night .bill-owes{font-size:34px;margin-top:10px}
+.thanks{text-align:center;font-size:12.5px;font-weight:700;margin-top:12px}
+/* person tags: initials in a circle (coloured in the app, plain ink on the slip) */
+.ptag{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.3px;vertical-align:-4px;flex:none;font-family:var(--round)}
+.ptag.mono{background:transparent;border:1.5px solid var(--ink);color:var(--ink)}
+.pchip .ptag{margin-left:-4px}
+/* night slip — item lines with sharer tags */
+.slip-item{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:2.5px 0;font-variant-numeric:tabular-nums}
+.slip-item.soft{color:var(--ink-soft)}
+.slip-item .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slip-item .tags{display:inline-flex;flex:none;gap:3px}
+.slip-item .pr{margin-left:auto;flex:none}
+/* night slip — settle-up block */
+.settle{border-top:2px dashed var(--rule);margin-top:16px;padding-top:12px}
+.settle-title{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-soft);text-align:center;margin-bottom:8px}
+.settle-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:4px 0}
+.settle-who{font-size:16px;font-weight:700;line-height:1.5;min-width:0;color:var(--ink)}
+.settle-amt{font-size:21px;font-weight:800;color:var(--clay);flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+.settle-src{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--ink-soft);padding:1px 0;font-variant-numeric:tabular-nums}
+.settle-src:last-of-type{margin-bottom:8px}
 /* misc */
 .empty{color:var(--ink-soft);font-style:italic;font-size:14px;padding:6px 2px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));background:var(--ink);color:var(--card);padding:10px 18px;border-radius:4px;font-size:14px;z-index:70;max-width:88vw;text-align:center;transition:opacity .3s;opacity:0;pointer-events:none}
@@ -235,8 +261,45 @@ function computeRestaurant(rest,nPeople){
 }
 /* ===CALC-END=== */
 
+/* Night summary: per-person totals across every restaurant, built only from
+   computeRestaurant output — no new money maths, all integer satang.
+   Extracted by calc.test.js (===NIGHT-START/END===) so the combined slip's
+   settle block is proven to sum exactly to the restaurant totals. */
+/* ===NIGHT-START=== */
+function computeNight(restaurants,nPeople){
+  const perRest=restaurants.map(r=>computeRestaurant(r,nPeople));
+  const grandTotal=perRest.reduce((a,c)=>a+c.total,0);
+  const people=Array.from({length:nPeople},(_,pi)=>{
+    const byRest=perRest.map(c=>c.perPerson[pi]?c.perPerson[pi].total:0);
+    const total=byRest.reduce((a,b)=>a+b,0);
+    /* Transfer amounts round to the nearest whole baht (halves up) — rTotal and
+       rByRest are in baht, not satang. Restaurant sections stay exact-satang. */
+    return{total,byRest,rTotal:Math.round(total/100),rByRest:byRest.map(b=>Math.round(b/100))};
+  });
+  /* Settle-up groups: people whose ROUNDED bills match at every restaurant (and
+     in total) share one line — rounding is what lets near-identical bills,
+     a satang or two apart, collapse into "฿504 each". */
+  const groups=[];const gIdx=new Map();
+  people.forEach((p,pi)=>{
+    const key=p.rTotal+'|'+p.rByRest.join(',');
+    if(gIdx.has(key))groups[gIdx.get(key)].members.push(pi);
+    else{gIdx.set(key,groups.length);groups.push({rTotal:p.rTotal,rByRest:p.rByRest,members:[pi]});}
+  });
+  groups.sort((a,b)=>b.rTotal-a.rTotal);
+  return{perRest,people,groups,grandTotal};
+}
+/* ===NIGHT-END=== */
+
 function fmt(s){return '฿'+(s/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtB(baht){return '฿'+baht.toLocaleString('en-US');} /* whole-baht transfer amounts */
+function fmtR(s){return fmtB(Math.round(s/100));} /* satang → whole-baht display on slips */
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* person colours: retro-receipt palette by seat order; tags show the first two letters */
+const PCOLORS=['#cf541c','#4a79b8','#4e7a52','#8058a5','#c25b78','#2f8391','#a8790f','#5b67b8','#9d3d76','#673c33'];
+function pcolor(pi){return PCOLORS[pi%PCOLORS.length];}
+function tagHTML(pi,mono){const nm=(state.people[pi]||'').trim(),init=esc(Array.from(nm).slice(0,2).join('').toUpperCase());
+  return mono?'<span class="ptag mono">'+init+'</span>':'<span class="ptag" style="background:'+pcolor(pi)+'">'+init+'</span>';}
 
 /* ================= rendering ================= */
 function chargeLabel(c,name){
@@ -252,7 +315,7 @@ function render(){
   h+='<section><div class="sec-label">1 · Who\'s eating</div>';
   h+='<div class="chips-row">';
   if(!P.length)h+='<span class="empty">Add everyone once — they carry through every restaurant tonight.</span>';
-  P.forEach((p,i)=>{h+='<span class="pchip">'+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
+  P.forEach((p,i)=>{h+='<span class="pchip">'+tagHTML(i)+esc(p)+'<button data-action="remove-person" data-pi="'+i+'" aria-label="Remove '+esc(p)+'">×</button></span>';});
   h+='</div><div class="add-person"><input id="newPersonName" placeholder="Name (e.g. Aum)" autocomplete="off"><button class="btn" data-action="add-person">Add</button></div></section>';
 
   /* --- restaurants --- */
@@ -285,7 +348,7 @@ function restaurantHTML(r){
     h+='<div class="item-chips">';
     P.forEach((p,pi)=>{
       const on=it.sharers.includes(pi);
-      h+='<button class="chip'+(on?' on':'')+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
+      h+='<button class="chip'+(on?' on':'')+'" style="--pc:'+pcolor(pi)+'" data-action="chip" data-rid="'+r.id+'" data-iid="'+it.id+'" data-pi="'+pi+'">'+esc(p)+'</button>';
     });
     h+='<span class="divbadge" data-badge="'+it.id+'"></span></div></div>';
   });
@@ -348,30 +411,74 @@ function personBillHTML(pi,standalone){
     grand+=pp.total;
     let b='<div class="bill-rest"><div class="bill-rest-name">'+esc(r.name||'Restaurant')+'</div>';
     pp.items.forEach(it=>{
-      b+='<div class="bill-line"><span class="ln">'+esc(it.name)+(it.n>1?' <span style="color:var(--clay)">÷'+it.n+'</span>':'')+'</span><span>'+fmt(it.share)+'</span></div>';
+      b+='<div class="bill-line"><span class="ln">'+esc(it.name)+'</span><span>'+fmtR(it.share)+'</span></div>';
     });
-    b+='<div class="bill-line soft"><span>food subtotal</span><span>'+fmt(pp.food)+'</span></div>';
-    b+='<div class="bill-line soft"><span>'+esc(chargeLabel(r.service,'service').toLowerCase())+'</span><span>'+fmt(pp.service)+'</span></div>';
-    b+='<div class="bill-line soft"><span>'+esc(chargeLabel(r.vat,'VAT'))+'</span><span>'+fmt(pp.vat)+'</span></div>';
-    b+='<div class="bill-line rt"><span>restaurant total</span><span>'+fmt(pp.total)+'</span></div></div>';
+    b+='<div class="bill-line soft"><span>food subtotal</span><span>'+fmtR(pp.food)+'</span></div>';
+    b+='<div class="bill-line soft"><span>'+esc(chargeLabel(r.service,'service').toLowerCase())+'</span><span>'+fmtR(pp.service)+'</span></div>';
+    b+='<div class="bill-line soft"><span>'+esc(chargeLabel(r.vat,'VAT'))+'</span><span>'+fmtR(pp.vat)+'</span></div>';
+    b+='<div class="bill-line rt"><span>restaurant total</span><span>'+fmtR(pp.total)+'</span></div></div>';
     blocks.push(b);
   });
   let h='<div class="bill" data-bill="'+pi+'">'+
     '<div class="bill-head"><div class="bill-name">'+esc(P[pi])+'</div>'+
-    '<div class="bill-owes">'+fmt(grand)+'</div>'+
+    '<div class="bill-owes">'+fmtB(Math.round(grand/100))+'</div>'+
     '<div class="bill-sub">total for tonight</div></div>';
   h+=blocks.join('')||'<p class="empty">Nothing assigned yet.</p>';
-  h+='<div class="bill-transfer">Please transfer <span class="amt">'+fmt(grand)+'</span></div>';
-  h+='<div class="bill-foot">Split &amp; Settle · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>';
+  h+='<div class="bill-transfer">Please transfer <span class="amt">'+fmtB(Math.round(grand/100))+'</span></div>';
+  h+='<div class="bill-foot">Rounded to the nearest baht · Split &amp; Settle · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>';
   h+='</div>';
-  if(!standalone)h+='<button class="btn btn-wide" data-action="export" data-pi="'+pi+'" style="margin-top:-8px">Save '+esc(P[pi])+'’s bill as image</button>';
+  if(!standalone)h+='<button class="btn-ghost btn-wide" data-action="export" data-pi="'+pi+'" style="margin-top:-10px">Save '+esc(P[pi])+'’s bill as image</button>';
+  return h;
+}
+
+/* One slip for the whole night: every restaurant's receipt, then who transfers what. */
+function nightSlipHTML(){
+  const P=state.people,R=state.restaurants;
+  const night=computeNight(R,P.length);
+  const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  let h='<div class="bill night" data-night-slip="1">'+
+    '<div class="bill-head"><div class="slip-brand">Split &amp; Settle</div>'+
+    '<div class="slip-date">'+esc(date)+'</div>'+
+    '<div class="bill-owes">'+fmtR(night.grandTotal)+'</div>'+
+    '<div class="bill-sub">grand total</div></div>';
+  R.forEach((r,ri)=>{
+    const c=night.perRest[ri];
+    h+='<div class="bill-rest"><div class="bill-rest-name">'+esc(r.name||'Restaurant')+'</div>';
+    r.items.forEach(it=>{
+      const sharers=(it.sharers||[]).filter(pi=>pi>=0&&pi<P.length).sort((a,b)=>a-b);
+      const price=fmtR(toSatang(it.price));
+      if(!sharers.length)h+='<div class="slip-item soft"><span class="nm">'+esc(it.name||'Item')+' (not counted)</span><span class="pr">'+price+'</span></div>';
+      else{
+        /* everyone shared it → no tags, just the price; a subset → their initials */
+        const tags=sharers.length===P.length?'':'<span class="tags">'+sharers.map(pi=>tagHTML(pi,true)).join('')+'</span>';
+        h+='<div class="slip-item"><span class="nm">'+esc(it.name||'Item')+'</span>'+tags+'<span class="pr">'+price+'</span></div>';
+      }
+    });
+    h+='<div class="bill-line soft"><span>food subtotal</span><span>'+fmtR(c.foodSubtotal)+'</span></div>'+
+       '<div class="bill-line soft"><span>'+esc(chargeLabel(r.service,'service').toLowerCase())+'</span><span>'+fmtR(c.serviceAmt)+'</span></div>'+
+       '<div class="bill-line soft"><span>'+esc(chargeLabel(r.vat,'VAT'))+' <em style="font-size:11px">on food + service</em></span><span>'+fmtR(c.vatAmt)+'</span></div>'+
+       '<div class="bill-line rt"><span>restaurant total</span><span>'+fmtR(c.total)+'</span></div></div>';
+  });
+  h+='<div class="settle"><div class="settle-title">Settle up</div>';
+  night.groups.forEach(g=>{
+    const who=g.members.map(pi=>esc(P[pi])).join(', ');
+    h+='<div class="settle-row"><span class="settle-who">'+who+'</span>'+
+       '<span class="settle-amt">'+fmtB(g.rTotal)+'</span></div>';
+    R.forEach((r,ri)=>{
+      if(g.rByRest[ri]>0)h+='<div class="settle-src"><span>'+esc(r.name||'Restaurant')+'</span><span>'+fmtB(g.rByRest[ri])+'</span></div>';
+    });
+  });
+  h+='</div><div class="bill-transfer">All settled. When&#39;s the next one? :)</div>'+
+     '<div class="bill-foot">Rounded to the nearest baht · Split &amp; Settle · '+esc(date)+'</div>'+
+     '<div class="thanks">Thank you !</div></div>';
   return h;
 }
 
 function renderSummary(){
   const el=$('#summary');if(!el)return;
   if(!state.people.length||!state.restaurants.length){el.innerHTML='<p class="empty">Add people and at least one restaurant to see each person’s bill.</p>';return;}
-  el.innerHTML=state.people.map((_,pi)=>personBillHTML(pi,false)).join('');
+  el.innerHTML='<button class="btn btn-clay btn-wide" data-action="export-night">Save tonight&#39;s summary as image</button>'+
+    state.people.map((_,pi)=>personBillHTML(pi,false)).join('');
 }
 
 /* ================= mutations ================= */
@@ -439,6 +546,7 @@ document.addEventListener('click',e=>{
   }
   else if(a==='scan'){startScan();}
   else if(a==='export'){exportBill(Number(b.dataset.pi),b);}
+  else if(a==='export-night'){exportNight(b);}
   else if(a==='start-over'){
     if(confirm('Clear everyone and every restaurant from tonight?')){
       const k=state.apiKey;state=blankState();state.apiKey=k;save();render();
@@ -530,13 +638,48 @@ async function exportBill(pi,btn){
   btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
   try{
     await new Promise(r=>setTimeout(r,50));
-    const canvas=await html2canvas(stage.firstChild,{scale:3,backgroundColor:'#fffdf7',logging:false});
+    const canvas=await html2canvas(stage.firstChild,{scale:3,backgroundColor:'#fffdf8',logging:false});
     const name=state.people[pi].replace(/[^\w฀-๿-]+/g,'') || 'friend';
     const a=document.createElement('a');
     a.download='bill-'+name+'.png';
     a.href=canvas.toDataURL('image/png');
     document.body.appendChild(a);a.click();a.remove();
     toast('Saved bill-'+name+'.png');
+  }catch(e){toast('Couldn’t render the image — try again.');}
+  finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;}
+}
+
+/* ================= export combined night summary as PNG ================= */
+async function exportNight(btn){
+  if(typeof html2canvas!=='function'){toast('Image export unavailable.');return;}
+  const stage=$('#exportStage');
+  stage.innerHTML='<div style="background:var(--card);padding:8px 0 14px">'+nightSlipHTML()+'</div>';
+  btn.disabled=true;const old=btn.textContent;btn.textContent='Rendering…';
+  try{
+    await new Promise(r=>setTimeout(r,50));
+    const el=stage.firstChild;
+    /* iOS Safari silently blanks canvases over ~16.7M px (long edges bite even sooner), so keep width×scale ≤ 4096 and total area ≤ 16M px — a smaller scale beats a broken image. */
+    const w=el.offsetWidth||400,hgt=el.offsetHeight||1;
+    let scale=Math.min(3,Math.sqrt(16000000/(w*hgt)),4096/w);
+    scale=Math.max(1.5,scale);
+    const canvas=await html2canvas(el,{scale,backgroundColor:'#fffdf8',logging:false});
+    const d=new Date();
+    const fname='split-and-settle-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.png';
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    if(!blob)throw new Error('toBlob failed');
+    const file=new File([blob],fname,{type:'image/png'});
+    let done=false;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:'Split & Settle'});done=true;toast('Shared '+fname);}
+      catch(err){if(err&&err.name==='AbortError')done=true;/* user closed the share sheet — don't also download */}
+    }
+    if(!done){
+      const a=document.createElement('a');
+      a.download=fname;a.href=URL.createObjectURL(blob);
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+      toast('Saved '+fname);
+    }
   }catch(e){toast('Couldn’t render the image — try again.');}
   finally{stage.innerHTML='';btn.disabled=false;btn.textContent=old;}
 }
