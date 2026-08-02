@@ -39,6 +39,12 @@ h1{font-size:clamp(26px,7vw,34px);letter-spacing:-.5px;font-weight:700}
 h1 .amp{color:var(--clay-dark)}
 .logo{width:38px;height:38px;border-radius:11px;flex:none;display:block;object-fit:cover}
 .tagline{font-size:12.5px;color:var(--ink-soft);margin:2px 2px 16px}
+.tagline select{font-family:var(--round);font-size:12.5px;font-weight:700;color:var(--clay-dark);
+  background:none;border:none;border-bottom:1.5px dashed var(--rule);border-radius:0;padding:1px 16px 1px 2px;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--clay-dark) 50%),linear-gradient(135deg,var(--clay-dark) 50%,transparent 50%);
+  background-position:right 5px top 8px,right 1px top 8px;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+.tagline select:focus{outline:none;border-bottom-color:var(--clay-dark)}
 button{font-family:var(--round);cursor:pointer;-webkit-tap-highlight-color:transparent}
 input,button{font-size:16px}
 input{font-family:var(--round);color:var(--ink);background:transparent;border:none;border-bottom:2px dashed var(--rule);padding:6px 2px;outline:none;min-width:0}
@@ -154,7 +160,13 @@ details.settings .hint{font-size:12px;color:var(--ink-soft);margin-top:8px;line-
     <img class="logo" src="icons/icon-192.png" alt="" aria-hidden="true" width="38" height="38">
     <h1>Split <span class="amp">&amp;</span> Settle</h1>
   </header>
-  <p class="tagline">one night, many restaurants, one bill each — in ฿</p>
+  <p class="tagline">one trip, many restos, one bill each, in
+    <select id="currency" aria-label="Currency">
+      <option value="THB">฿ THB</option>
+      <option value="USD">$ USD</option>
+      <option value="CAD">$ CAD</option>
+    </select>
+  </p>
 
   <div id="app"></div>
 
@@ -204,8 +216,17 @@ const SKEY='splitSettle.v1';
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
 function defaultCharges(){return{service:{on:true,mode:'pct',value:10},vat:{on:true,mode:'pct',value:7}};}
-function blankState(){return{people:[],restaurants:[],apiKey:''};}
-function loadState(){try{const s=JSON.parse(localStorage.getItem(SKEY));if(s&&Array.isArray(s.people)&&Array.isArray(s.restaurants))return s;}catch(e){}return null;}
+function blankState(){return{people:[],restaurants:[],apiKey:'',currency:'THB'};}
+/* Display currencies. All three have 100 minor units, which is what the calc
+   engine already assumes — switching currency changes formatting only, never
+   the maths. `unit` names the whole unit for the rounding note. */
+const CURRENCIES={
+  THB:{sym:'฿',unit:'baht'},
+  USD:{sym:'$',unit:'dollar'},
+  CAD:{sym:'$',unit:'dollar'}
+};
+function cur(){return CURRENCIES[state.currency]||CURRENCIES.THB;}
+function loadState(){try{const s=JSON.parse(localStorage.getItem(SKEY));if(s&&Array.isArray(s.people)&&Array.isArray(s.restaurants)){if(!CURRENCIES[s.currency])s.currency='THB';return s;}}catch(e){}return null;}
 let state=loadState()||blankState();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(state));}catch(e){}}
 
@@ -273,13 +294,13 @@ function computeNight(restaurants,nPeople){
   const people=Array.from({length:nPeople},(_,pi)=>{
     const byRest=perRest.map(c=>c.perPerson[pi]?c.perPerson[pi].total:0);
     const total=byRest.reduce((a,b)=>a+b,0);
-    /* Transfer amounts round to the nearest whole baht (halves up) — rTotal and
-       rByRest are in baht, not satang. Restaurant sections stay exact-satang. */
+    /* Transfer amounts round to the nearest whole unit (halves up) — rTotal and
+       rByRest are whole units, not minor units. Restaurant sections stay exact. */
     return{total,byRest,rTotal:Math.round(total/100),rByRest:byRest.map(b=>Math.round(b/100))};
   });
   /* Settle-up groups: people whose ROUNDED bills match at every restaurant (and
      in total) share one line — rounding is what lets near-identical bills,
-     a satang or two apart, collapse into "฿504 each". */
+     a minor unit or two apart, collapse onto one line. */
   const groups=[];const gIdx=new Map();
   people.forEach((p,pi)=>{
     const key=p.rTotal+'|'+p.rByRest.join(',');
@@ -291,9 +312,9 @@ function computeNight(restaurants,nPeople){
 }
 /* ===NIGHT-END=== */
 
-function fmt(s){return '฿'+(s/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtB(baht){return '฿'+baht.toLocaleString('en-US');} /* whole-baht transfer amounts */
-function fmtR(s){return fmtB(Math.round(s/100));} /* satang → whole-baht display on slips */
+function fmt(s){return cur().sym+(s/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtB(whole){return cur().sym+whole.toLocaleString('en-US');} /* whole-unit transfer amounts */
+function fmtR(s){return fmtB(Math.round(s/100));} /* minor units → whole units on slips */
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 /* Names are entered as two letters, so a person's tag is simply their name. */
@@ -304,7 +325,7 @@ function tagHTML(pi){return '<span class="ptag">'+esc(cleanName(state.people[pi]
 /* ================= rendering ================= */
 function chargeLabel(c,name){
   if(!c.on)return name+' (off)';
-  return name+(c.mode==='pct'?' ('+(Number(c.value)||0)+'%)':' (฿ fixed)');
+  return name+(c.mode==='pct'?' ('+(Number(c.value)||0)+'%)':' ('+cur().sym+' fixed)');
 }
 function render(){
   const app=$('#app');
@@ -330,6 +351,7 @@ function render(){
 
   app.innerHTML=h;
   $('#apiKeyInput').value=state.apiKey||'';
+  $('#currency').value=state.currency;
   renderSummary();
   R.forEach(r=>updateRestaurantComputed(r.id));
 }
@@ -362,7 +384,7 @@ function restaurantHTML(r){
       '<label class="lbl"><input type="checkbox" data-action="charge-on" data-rid="'+r.id+'" data-charge="'+key+'"'+(c.on?' checked':'')+'>'+label+'</label>'+
       '<span class="mode-toggle">'+
         '<button data-action="charge-mode" data-mode="pct" data-rid="'+r.id+'" data-charge="'+key+'" class="'+(c.mode==='pct'?'on':'')+'">%</button>'+
-        '<button data-action="charge-mode" data-mode="amt" data-rid="'+r.id+'" data-charge="'+key+'" class="'+(c.mode==='amt'?'on':'')+'">฿</button>'+
+        '<button data-action="charge-mode" data-mode="amt" data-rid="'+r.id+'" data-charge="'+key+'" class="'+(c.mode==='amt'?'on':'')+'">'+esc(cur().sym)+'</button>'+
       '</span>'+
       '<input class="num charge-val" value="'+esc(c.value)+'" inputmode="decimal" data-field="cval" data-rid="'+r.id+'" data-charge="'+key+'">'+
       '<span class="live num" data-live="'+key+'-'+r.id+'"></span></div>';
@@ -425,7 +447,7 @@ function personBillHTML(pi,standalone){
     '<div class="bill-sub">total for tonight</div></div>';
   h+=blocks.join('')||'<p class="empty">Nothing assigned yet.</p>';
   h+='<div class="bill-transfer">Please transfer <span class="amt">'+fmtB(Math.round(grand/100))+'</span></div>';
-  h+='<div class="bill-foot">Rounded to the nearest baht · Split &amp; Settle · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>';
+  h+='<div class="bill-foot">Rounded to the nearest '+cur().unit+' · '+esc(state.currency)+' · Split &amp; Settle · '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>';
   h+='</div>';
   if(!standalone)h+='<button class="btn-ghost btn-wide" data-action="export" data-pi="'+pi+'" style="margin-top:-10px">Save '+esc(P[pi])+'’s bill as image</button>';
   return h;
@@ -469,7 +491,7 @@ function nightSlipHTML(){
     });
   });
   h+='</div><div class="bill-transfer">All settled. When&#39;s the next one? :)</div>'+
-     '<div class="bill-foot">Rounded to the nearest baht · Split &amp; Settle · '+esc(date)+'</div>'+
+     '<div class="bill-foot">Rounded to the nearest '+cur().unit+' · '+esc(state.currency)+' · Split &amp; Settle · '+esc(date)+'</div>'+
      '<div class="thanks">Thank you !</div></div>';
   return h;
 }
@@ -549,7 +571,7 @@ document.addEventListener('click',e=>{
   else if(a==='export-night'){exportNight(b);}
   else if(a==='start-over'){
     if(confirm('Clear everyone and every restaurant from tonight?')){
-      const k=state.apiKey;state=blankState();state.apiKey=k;save();render();
+      const k=state.apiKey,c=state.currency;state=blankState();state.apiKey=k;state.currency=c;save();render();
     }
   }
 });
@@ -560,6 +582,7 @@ document.addEventListener('input',e=>{
   else if(f==='iprice'){const it=findI(t.dataset.rid,t.dataset.iid);if(it){it.price=t.value;save();updateRestaurantComputed(t.dataset.rid);}}
   else if(f==='cval'){const r=findR(t.dataset.rid);if(r){r[t.dataset.charge].value=t.value;save();updateRestaurantComputed(t.dataset.rid);}}
   else if(t.id==='apiKeyInput'){state.apiKey=t.value.trim();save();}
+  else if(t.id==='currency'){if(CURRENCIES[t.value]){state.currency=t.value;save();render();}}
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='newPersonName'){e.preventDefault();document.querySelector('[data-action="add-person"]').click();}
@@ -570,7 +593,7 @@ let toastTimer;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3200);}
 
 /* ================= receipt scanning (Claude API — network only) ================= */
-const SCAN_SYSTEM='You read photos of Thai restaurant receipts. Respond with JSON only — no prose, no markdown fences. Schema: {"restaurant": string, "items": [{"name": string, "price": number}]}. Rules: include only food and drink line items with their line-total price in baht. If a line shows quantity, use the line total as one item. EXCLUDE subtotal, service charge, VAT, tax, totals, discounts, rounding and payment lines. If the restaurant name is unreadable use "". If an item name is unreadable, transliterate or describe it briefly.';
+const SCAN_SYSTEM='You read photos of restaurant receipts. Respond with JSON only — no prose, no markdown fences. Schema: {"restaurant": string, "items": [{"name": string, "price": number}]}. Rules: include only food and drink line items with their line-total price as a plain number, no currency symbol. If a line shows quantity, use the line total as one item. EXCLUDE subtotal, service charge, VAT, tax, totals, discounts, rounding and payment lines. If the restaurant name is unreadable use "". If an item name is unreadable, transliterate or describe it briefly.';
 function startScan(){
   if(!state.people.length){toast('Add the people first — scanned items get assigned to everyone.');return;}
   if(!state.apiKey){$('#settingsBox').open=true;$('#apiKeyInput').focus();toast('Scanning needs a Claude API key — add it in Settings.');return;}
