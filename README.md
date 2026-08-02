@@ -1,6 +1,6 @@
 # Split & Settle
 
-A bill-splitting PWA for Thai restaurant nights — multiple restaurants, one combined bill per person, in baht.
+A bill-splitting PWA for restaurant nights — multiple restaurants, one combined bill per person. Pick the currency (THB, USD, CAD) from the tagline; it changes how amounts are displayed, never the arithmetic, and there is no conversion between currencies.
 
 ## What it does
 
@@ -11,9 +11,9 @@ Add everyone once, then add each restaurant as the night goes on. Assign each di
 3. VAT — on food **+ service** (not food alone)
 4. Restaurant total
 
-Service and VAT can each be entered as a percentage (defaults 10% / 7%) or as the exact baht amount printed on the receipt (`% / ฿` toggle), so the app total always matches the real bill. Each person's share of service and VAT is proportional to what they ordered, allocated with a largest-remainder method so shares sum to the restaurant total **exactly** — no rounding drift.
+Service and VAT can each be entered as a percentage (defaults 10% / 7%) or as the exact amount printed on the receipt (`% / ฿` toggle, the symbol following the chosen currency), so the app total always matches the real bill. Each person's share of service and VAT is proportional to what they ordered, allocated with a largest-remainder method so shares sum to the restaurant total **exactly** — no rounding drift.
 
-The summary shows one bill per person across all restaurants. "Save tonight's summary as image" exports the whole night as **one** receipt-style PNG — every restaurant's items and totals (dishes shared by a subset carry each sharer's colour-initial tag) plus a settle-up block of transfer amounts rounded to the nearest baht, grouped so people owing the same rounded amount share one line, largest first — and opens the native share sheet where supported (LINE/WhatsApp), falling back to a download. Each person's card keeps a smaller "Save [name]'s bill as image" button for exporting just their own slip (via html2canvas, inlined; render scale adapts so tall slips stay within iOS canvas limits).
+The summary shows one bill per person across all restaurants. "Save tonight's summary as image" exports the whole night as **one** receipt-style PNG — every restaurant's items and totals (dishes shared by a subset carry each sharer's colour-initial tag) plus a settle-up block of transfer amounts rounded to the nearest whole unit, grouped so people owing the same rounded amount share one line, largest first — and opens the native share sheet where supported (LINE/WhatsApp), falling back to a download. Each person's card keeps a smaller "Save [name]'s bill as image" button for exporting just their own slip (via html2canvas, inlined; render scale adapts so tall slips stay within iOS canvas limits).
 
 ## Receipt scanning
 
